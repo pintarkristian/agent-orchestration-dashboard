@@ -132,12 +132,12 @@ The frontend is prepared for:
 - Axios API client
 - TanStack Query
 - React Router
-- React Flow dependency for future workflow visualization
+- React Flow workflow visualization
 - Responsive dashboard layout with reusable UI components
 - Workflow run form connected to `POST /api/workflows/run`
 - Workflow history page connected to `GET /api/workflows`
 - Workflow detail page connected to `GET /api/workflows/{workflow_id}`
-- Final answer and per-agent step result cards
+- Final answer, workflow graph, and per-agent step result cards
 
 Run locally:
 
@@ -148,15 +148,14 @@ cp .env.example .env
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` by default and expects the backend API at `http://localhost:8000`. It includes Dashboard, Workflow Run, Workflow History, and Workflow Detail pages. The Workflow Run page submits tasks to `POST /api/workflows/run`, shows loading/error states, displays the final answer, and renders each agent step in a readable card layout. The Workflow History page reads saved runs from `GET /api/workflows`, and each detail page reads a saved run from `GET /api/workflows/{workflow_id}`. Workflow visualization is intentionally not implemented yet.
+The frontend runs on `http://localhost:5173` by default and expects the backend API at `http://localhost:8000`. It includes Dashboard, Workflow Run, Workflow History, and Workflow Detail pages. The Workflow Run page submits tasks to `POST /api/workflows/run`, shows loading/error states, displays the final answer, renders a React Flow graph of the agent sequence, and shows each agent step in a readable card layout. The Workflow History page reads saved runs from `GET /api/workflows`, and each detail page reads a saved run from `GET /api/workflows/{workflow_id}` with the same graph and detailed step inspection UI.
 
 ## Current Scope
 
-This version contains the clean full-stack foundation, the OpenRouter client, specialized backend agents, the sequential multi-agent workflow orchestration endpoint, SQLite workflow persistence, a functional frontend workflow run UI, and responsive saved workflow history/detail screens.
+This version contains the clean full-stack foundation, the OpenRouter client, specialized backend agents, the sequential multi-agent workflow orchestration endpoint, SQLite workflow persistence, a functional frontend workflow run UI, responsive saved workflow history/detail screens, and React Flow workflow visualization.
 
 Planned future work includes:
 
-1. React Flow workflow visualization
-2. Real-time workflow status updates
-3. Parallel or conditional orchestration workflows
-4. Docker support
+1. Real-time workflow status updates
+2. Parallel or conditional orchestration workflows
+3. Docker support

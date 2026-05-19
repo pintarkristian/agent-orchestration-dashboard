@@ -10,18 +10,19 @@ React + TypeScript frontend for the AI Agent Orchestration Dashboard.
 - Axios API client
 - TanStack Query provider
 - React Router pages
-- React Flow dependency prepared for a future workflow visualization milestone
+- React Flow workflow visualization for workflow run and detail pages
 - Clean responsive dashboard layout
 - Workflow run form connected to `POST /api/workflows/run`
-- Final answer and per-agent step result cards
+- Final answer, workflow graph, and per-agent step result cards
 - Saved workflow history and detail pages connected to the backend API
+- Clickable agent graph with status-aware nodes and step detail panel
 
 ## Pages
 
 - Dashboard: project overview and backend health status
-- Workflow Run: task input form, backend workflow submission, loading/error states, final answer, and per-agent step cards
+- Workflow Run: task input form, backend workflow submission, loading/error states, final answer, workflow graph, and per-agent step cards
 - Workflow History: responsive list/table of saved workflow runs from `GET /api/workflows`
-- Workflow Detail: saved run detail page powered by `GET /api/workflows/{workflow_id}`
+- Workflow Detail: saved run detail page powered by `GET /api/workflows/{workflow_id}` with workflow graph and step details
 
 ## Components
 
@@ -32,6 +33,7 @@ React + TypeScript frontend for the AI Agent Orchestration Dashboard.
 - `StatusBadge`
 - `LoadingState`
 - `ErrorState`
+- `WorkflowGraph`
 
 ## Local Setup
 
