@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query';
 import { getWorkflow } from '../api/workflows';
 import { AgentStepCard } from '../components/workflows/AgentStepCard';
 import { WorkflowResultCard } from '../components/workflows/WorkflowResultCard';
+import { WorkflowGraph } from '../components/workflows/WorkflowGraph';
 import { Card } from '../components/ui/Card';
 import { ErrorState } from '../components/ui/ErrorState';
 import { LoadingState } from '../components/ui/LoadingState';
@@ -63,6 +64,8 @@ export default function WorkflowDetailPage() {
           </Card>
 
           <WorkflowResultCard workflow={workflowQuery.data} title="Final Answer" eyebrow="Combined Output" />
+
+          <WorkflowGraph workflow={workflowQuery.data} />
 
           {workflowQuery.data.error && (
             <ErrorState title="Workflow error" message={workflowQuery.data.error} />

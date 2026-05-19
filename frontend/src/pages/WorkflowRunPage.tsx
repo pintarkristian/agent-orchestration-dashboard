@@ -5,6 +5,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { runWorkflow } from '../api/workflows';
 import { AgentStepCard } from '../components/workflows/AgentStepCard';
 import { WorkflowResultCard } from '../components/workflows/WorkflowResultCard';
+import { WorkflowGraph } from '../components/workflows/WorkflowGraph';
 import { Card } from '../components/ui/Card';
 import { ErrorState } from '../components/ui/ErrorState';
 import { LoadingState } from '../components/ui/LoadingState';
@@ -102,6 +103,8 @@ export default function WorkflowRunPage() {
       {workflowMutation.data && (
         <div className="space-y-6">
           <WorkflowResultCard workflow={workflowMutation.data} />
+
+          <WorkflowGraph workflow={workflowMutation.data} />
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
