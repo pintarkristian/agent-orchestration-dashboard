@@ -3,7 +3,6 @@ from __future__ import annotations
 import json
 
 import pytest
-
 from app.models.enums import AgentRole, WorkflowStatus
 from app.models.workflow import WorkflowStep
 from app.models.workflow_event import WorkflowEvent, WorkflowEventType

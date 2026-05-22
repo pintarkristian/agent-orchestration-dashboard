@@ -3,10 +3,6 @@ from __future__ import annotations
 from collections.abc import Generator
 from datetime import UTC, datetime
 
-from fastapi.testclient import TestClient
-from sqlalchemy import create_engine
-from sqlalchemy.orm import Session, sessionmaker
-
 from app.api.routes.workflows import get_openrouter_client
 from app.db.models import Base
 from app.db.session import get_db
@@ -14,6 +10,9 @@ from app.main import app
 from app.models.enums import AgentRole, WorkflowStatus
 from app.models.workflow import WorkflowResult, WorkflowStep
 from app.repositories.workflow_repository import WorkflowRepository
+from fastapi.testclient import TestClient
+from sqlalchemy import create_engine
+from sqlalchemy.orm import Session, sessionmaker
 
 
 class MockOpenRouterClient:

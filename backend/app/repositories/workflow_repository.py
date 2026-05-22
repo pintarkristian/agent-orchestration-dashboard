@@ -21,7 +21,9 @@ class WorkflowRepository:
     def save_workflow_result(self, result: WorkflowResult) -> WorkflowResult:
         """Persist a completed or failed workflow result."""
         created_at = result.created_at or result.started_at or datetime.now(UTC)
-        duration_ms = result.total_duration_ms if result.total_duration_ms is not None else result.duration_ms
+        duration_ms = (
+            result.total_duration_ms if result.total_duration_ms is not None else result.duration_ms
+        )
 
         record = WorkflowRunRecord(
             id=result.id,

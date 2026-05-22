@@ -1,8 +1,6 @@
 from datetime import UTC, datetime
 
 import pytest
-from pydantic import ValidationError
-
 from app.models.agent import (
     AgentDefinition,
     AgentExecutionInput,
@@ -10,6 +8,7 @@ from app.models.agent import (
     AgentRole,
 )
 from app.models.workflow import WorkflowResult, WorkflowRun, WorkflowStatus, WorkflowStep
+from pydantic import ValidationError
 
 
 def test_agent_definition_creation() -> None:

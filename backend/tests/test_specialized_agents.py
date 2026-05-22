@@ -1,5 +1,4 @@
 import pytest
-
 from app.agents import (
     DeveloperAgent,
     FinalAnswerAgent,
@@ -58,6 +57,4 @@ async def test_each_agent_can_run_with_mocked_openrouter_client(
     assert agent.name
     assert agent.description
     assert expected_prompt_text in agent.system_prompt.lower()
-    assert mock_client.calls == [
-        (agent.system_prompt, "Build an AI agent orchestration dashboard")
-    ]
+    assert mock_client.calls == [(agent.system_prompt, "Build an AI agent orchestration dashboard")]
