@@ -72,6 +72,51 @@ The backend is prepared for:
 - Server-Sent Events endpoint at `/api/workflows/{workflow_id}/events` for live workflow updates
 - Pytest testing
 
+## Docker Development
+
+The application can run in Docker without GPU support. The Docker Compose setup uses a Python slim image for the backend, a Node image for the Vite frontend, bind mounts the source directories for development, and stores SQLite data in a Docker volume.
+
+Create a local Compose environment file if you want to override the defaults:
+
+```bash
+cp .env.example .env
+```
+
+Important environment variables:
+
+- `OPENROUTER_API_KEY` - optional OpenRouter API key for live model calls
+- `OPENROUTER_MODEL` - defaults to `openai/gpt-4o-mini`
+- `DATABASE_URL` - defaults to `sqlite:////data/orchestration.db` in Docker
+- `VITE_API_BASE_URL` - defaults to `http://localhost:8000`
+
+Build the containers:
+
+```bash
+docker compose build
+```
+
+Run the full application:
+
+```bash
+docker compose up
+```
+
+Run only the backend:
+
+```bash
+docker compose up backend
+```
+
+Run only the frontend:
+
+```bash
+docker compose up frontend
+```
+
+Backend: `http://localhost:8000`
+
+Frontend: `http://localhost:5173`
+
 Run locally:
 
 ```bash
@@ -165,5 +210,4 @@ This version contains the clean full-stack foundation, the OpenRouter client, sp
 Planned future work includes:
 
 1. Parallel or conditional orchestration workflows
-2. Docker support
-3. Authentication and project/team workspaces
+2. Authentication and project/team workspaces
