@@ -1,4 +1,4 @@
-import { apiClient } from './client';
+import { API_BASE_URL, apiClient } from './client';
 import type { HealthResponse, RunWorkflowRequest, WorkflowRun } from '../types/workflow';
 
 export async function getHealth(): Promise<HealthResponse> {
@@ -19,4 +19,8 @@ export async function getWorkflow(workflowId: string): Promise<WorkflowRun> {
 export async function runWorkflow(payload: RunWorkflowRequest): Promise<WorkflowRun> {
   const response = await apiClient.post<WorkflowRun>('/api/workflows/run', payload);
   return response.data;
+}
+
+export function getWorkflowEventsUrl(workflowId: string): string {
+  return `${API_BASE_URL.replace(/\/$/, '')}/api/workflows/${workflowId}/events`;
 }

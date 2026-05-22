@@ -1,14 +1,19 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from collections.abc import AsyncIterator
+
+from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
 from app.models.workflow import WorkflowResult
+from app.models.workflow_event import TERMINAL_WORKFLOW_EVENTS
 from app.repositories.workflow_repository import WorkflowRepository
 from app.services.openrouter_client import OpenRouterClient
 from app.services.orchestrator import SequentialOrchestrator
+from app.services.workflow_events import format_sse, workflow_event_bus
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 
@@ -20,6 +25,11 @@ class WorkflowRunRequest(BaseModel):
         ...,
         min_length=1,
         description="User task to process through the full agent workflow.",
+    )
+    workflow_id: str | None = Field(
+        default=None,
+        min_length=1,
+        description="Optional client-generated workflow id used for live event subscriptions.",
     )
 
 
@@ -41,6 +51,7 @@ def get_orchestrator(
     return SequentialOrchestrator(
         openrouter_client=openrouter_client,
         workflow_repository=workflow_repository,
+        event_publisher=workflow_event_bus,
     )
 
 
@@ -58,7 +69,30 @@ async def run_workflow(
     orchestrator: SequentialOrchestrator = Depends(get_orchestrator),
 ) -> WorkflowResult:
     """Run a task through the complete sequential agent workflow and persist it."""
-    return await orchestrator.run(request.task)
+    return await orchestrator.run(request.task, workflow_id=request.workflow_id)
+
+
+@router.get("/{workflow_id}/events")
+async def stream_workflow_events(workflow_id: str, request: Request) -> StreamingResponse:
+    """Stream real-time workflow updates as Server-Sent Events."""
+
+    async def event_stream() -> AsyncIterator[str]:
+        async for event in workflow_event_bus.subscribe(workflow_id):
+            if await request.is_disconnected():
+                break
+            yield format_sse(event)
+            if event.event in TERMINAL_WORKFLOW_EVENTS:
+                break
+
+    return StreamingResponse(
+        event_stream(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",
+        },
+    )
 
 
 @router.get("/{workflow_id}", response_model=WorkflowResult)

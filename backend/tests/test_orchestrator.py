@@ -51,7 +51,7 @@ class MockAgent:
 
 
 class MockOrchestrator:
-    async def run(self, task: str):
+    async def run(self, task: str, workflow_id: str | None = None):
         started_at = datetime.now(UTC)
         completed_at = datetime.now(UTC)
         return await SequentialOrchestrator(
@@ -63,7 +63,7 @@ class MockOrchestrator:
                 MockAgent(AgentRole.REVIEWER, "Reviewer output"),
                 MockAgent(AgentRole.FINAL_ANSWER, "Final answer output"),
             ]
-        ).run(task)
+        ).run(task, workflow_id=workflow_id)
 
 
 def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
