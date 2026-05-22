@@ -43,18 +43,14 @@ class OpenRouterClient:
         self.model = model or settings.openrouter_model
         self.base_url = (base_url or settings.openrouter_base_url).rstrip("/")
         self.timeout_seconds = (
-            timeout_seconds
-            if timeout_seconds is not None
-            else settings.openrouter_timeout_seconds
+            timeout_seconds if timeout_seconds is not None else settings.openrouter_timeout_seconds
         )
         self._transport = transport
 
     def build_headers(self) -> dict[str, str]:
         """Build default headers for OpenRouter requests."""
         if not self.api_key:
-            raise MissingOpenRouterAPIKeyError(
-                "OPENROUTER_API_KEY is required to call OpenRouter."
-            )
+            raise MissingOpenRouterAPIKeyError("OPENROUTER_API_KEY is required to call OpenRouter.")
 
         return {
             "Authorization": f"Bearer {self.api_key}",

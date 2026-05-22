@@ -24,7 +24,7 @@ export function formatWorkflowValue(value: WorkflowValue | undefined): string {
 
 export function formatDuration(durationMs?: number | null): string {
   if (durationMs === null || durationMs === undefined) {
-    return '—';
+    return '-';
   }
 
   if (durationMs >= 1000) {
@@ -36,7 +36,7 @@ export function formatDuration(durationMs?: number | null): string {
 
 export function formatDateTime(value?: string | null): string {
   if (!value) {
-    return '—';
+    return '-';
   }
 
   const date = new Date(value);
@@ -95,5 +95,5 @@ export function truncateText(value: string, maxLength = 140): string {
     return value;
   }
 
-  return `${value.slice(0, maxLength).trim()}…`;
+  return `${value.slice(0, maxLength).trim()}...`;
 }

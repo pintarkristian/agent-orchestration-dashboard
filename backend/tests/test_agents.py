@@ -1,11 +1,10 @@
 import pytest
-from fastapi.testclient import TestClient
-
 from app.agents.base_agent import BaseAgent
 from app.agents.planner_agent import PlannerAgent
 from app.api.routes.agents import get_openrouter_client
 from app.main import app
 from app.models.enums import AgentRole, WorkflowStatus
+from fastapi.testclient import TestClient
 
 
 class MockOpenRouterClient:

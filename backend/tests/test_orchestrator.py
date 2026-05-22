@@ -3,13 +3,12 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from fastapi.testclient import TestClient
-
 from app.api.routes.workflows import get_orchestrator
 from app.main import app
 from app.models.agent import AgentExecutionResult
 from app.models.enums import AgentRole, WorkflowStatus
 from app.services.orchestrator import SequentialOrchestrator
+from fastapi.testclient import TestClient
 
 
 class MockAgent:
@@ -52,8 +51,6 @@ class MockAgent:
 
 class MockOrchestrator:
     async def run(self, task: str, workflow_id: str | None = None):
-        started_at = datetime.now(UTC)
-        completed_at = datetime.now(UTC)
         return await SequentialOrchestrator(
             agents=[
                 MockAgent(AgentRole.PLANNER, "Planner output"),

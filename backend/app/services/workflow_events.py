@@ -37,7 +37,9 @@ class WorkflowEventBus:
 
         async with self._lock:
             historical_events = list(self._history.get(workflow_id, []))
-            terminal_seen = any(event.event in TERMINAL_WORKFLOW_EVENTS for event in historical_events)
+            terminal_seen = any(
+                event.event in TERMINAL_WORKFLOW_EVENTS for event in historical_events
+            )
             if not terminal_seen:
                 self._subscribers[workflow_id].add(queue)
 
@@ -63,11 +65,12 @@ class WorkflowEventBus:
 
 def format_sse(event: WorkflowEvent) -> str:
     """Format a workflow event as a Server-Sent Events frame."""
-    return (
-        f"event: {event.event.value}\n"
-        f"id: {event.id}\n"
-        f"data: {event.model_dump_json()}\n\n"
-    )
+    lines = [
+        f"event: {event.event.value}",
+        f"id: {event.id}",
+        f"data: {event.model_dump_json()}",
+    ]
+    return "\n".join(lines) + "\n\n"
 
 
 workflow_event_bus = WorkflowEventBus()

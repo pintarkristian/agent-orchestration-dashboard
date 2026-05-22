@@ -2,7 +2,6 @@ import json
 
 import httpx
 import pytest
-
 from app.services.openrouter_client import (
     MissingOpenRouterAPIKeyError,
     OpenRouterClient,
