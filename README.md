@@ -41,8 +41,9 @@ ai-agent-orchestration-dashboard/
 │   ├── src/
 │   │   ├── api/             # Axios API client and workflow API helpers
 │   │   ├── components/      # Layout and reusable UI components
+│   │   ├── hooks/           # React hooks, including live workflow event streaming
 │   │   ├── lib/             # Shared frontend constants
-│   │   ├── pages/           # Dashboard, workflow run, and history pages
+│   │   ├── pages/           # Dashboard, workflow run, history, and detail pages
 │   │   ├── styles/          # Tailwind/global styles
 │   │   └── types/           # Shared TypeScript types
 │   ├── .env.example         # Frontend environment variable template
@@ -68,6 +69,7 @@ The backend is prepared for:
 - Sequential orchestration endpoint at `/api/workflows/run`
 - SQLite persistence with SQLAlchemy for workflow runs and agent steps
 - Workflow history endpoints at `/api/workflows` and `/api/workflows/{workflow_id}`
+- Server-Sent Events endpoint at `/api/workflows/{workflow_id}/events` for live workflow updates
 - Pytest testing
 
 Run locally:
@@ -116,6 +118,12 @@ Get one saved workflow run:
 curl http://localhost:8000/api/workflows/<workflow_id>
 ```
 
+Stream live workflow events for a running workflow:
+
+```bash
+curl -N http://localhost:8000/api/workflows/<workflow_id>/events
+```
+
 Run tests:
 
 ```bash
@@ -137,7 +145,7 @@ The frontend is prepared for:
 - Workflow run form connected to `POST /api/workflows/run`
 - Workflow history page connected to `GET /api/workflows`
 - Workflow detail page connected to `GET /api/workflows/{workflow_id}`
-- Final answer, workflow graph, and per-agent step result cards
+- Final answer, live workflow graph, and per-agent step result cards
 
 Run locally:
 
@@ -148,14 +156,14 @@ cp .env.example .env
 npm run dev
 ```
 
-The frontend runs on `http://localhost:5173` by default and expects the backend API at `http://localhost:8000`. It includes Dashboard, Workflow Run, Workflow History, and Workflow Detail pages. The Workflow Run page submits tasks to `POST /api/workflows/run`, shows loading/error states, displays the final answer, renders a React Flow graph of the agent sequence, and shows each agent step in a readable card layout. The Workflow History page reads saved runs from `GET /api/workflows`, and each detail page reads a saved run from `GET /api/workflows/{workflow_id}` with the same graph and detailed step inspection UI.
+The frontend runs on `http://localhost:5173` by default and expects the backend API at `http://localhost:8000`. It includes Dashboard, Workflow Run, Workflow History, and Workflow Detail pages. The Workflow Run page submits tasks to `POST /api/workflows/run`, listens to `GET /api/workflows/{workflow_id}/events` for Server-Sent Events, updates the React Flow graph as agents run, shows intermediate outputs as soon as they arrive, and falls back to the final POST response if the live connection fails. The Workflow History page reads saved runs from `GET /api/workflows`, and each detail page reads a saved run from `GET /api/workflows/{workflow_id}` with the same graph and detailed step inspection UI.
 
 ## Current Scope
 
-This version contains the clean full-stack foundation, the OpenRouter client, specialized backend agents, the sequential multi-agent workflow orchestration endpoint, SQLite workflow persistence, a functional frontend workflow run UI, responsive saved workflow history/detail screens, and React Flow workflow visualization.
+This version contains the clean full-stack foundation, the OpenRouter client, specialized backend agents, the sequential multi-agent workflow orchestration endpoint, SQLite workflow persistence, a functional frontend workflow run UI, responsive saved workflow history/detail screens, React Flow workflow visualization, and Server-Sent Events for real-time workflow status updates.
 
 Planned future work includes:
 
-1. Real-time workflow status updates
-2. Parallel or conditional orchestration workflows
-3. Docker support
+1. Parallel or conditional orchestration workflows
+2. Docker support
+3. Authentication and project/team workspaces

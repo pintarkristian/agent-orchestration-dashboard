@@ -16,6 +16,10 @@ class Settings(BaseSettings):
     openrouter_timeout_seconds: float = 60.0
 
     database_url: str = "sqlite:///./orchestration.db"
+    cors_allowed_origins: list[str] = [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
     model_config = SettingsConfigDict(
         env_file=".env",

@@ -6,7 +6,8 @@ from app.services.openrouter_client import (
     OpenRouterInvalidResponseError,
     OpenRouterTimeoutError,
 )
-from app.services.orchestrator import SequentialOrchestrator, WorkflowAgent
+from app.services.orchestrator import SequentialOrchestrator, WorkflowAgent, WorkflowEventPublisher
+from app.services.workflow_events import WorkflowEventBus, format_sse, workflow_event_bus
 
 __all__ = [
     "MissingOpenRouterAPIKeyError",
@@ -17,4 +18,8 @@ __all__ = [
     "OpenRouterTimeoutError",
     "SequentialOrchestrator",
     "WorkflowAgent",
+    "WorkflowEventPublisher",
+    "WorkflowEventBus",
+    "format_sse",
+    "workflow_event_bus",
 ]

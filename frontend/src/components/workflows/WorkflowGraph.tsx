@@ -110,7 +110,7 @@ export function WorkflowGraph({ workflow }: WorkflowGraphProps) {
 
   useEffect(() => {
     setSelectedRole(getInitialSelectedRole(workflow));
-  }, [workflow]);
+  }, [workflow.id]);
 
   const stepsByRole = useMemo(() => {
     return agentOrder.reduce<Record<AgentRole, WorkflowStep | undefined>>((accumulator, role) => {
