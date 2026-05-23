@@ -215,3 +215,20 @@ def test_run_workflow_endpoint_strips_task_and_workflow_id() -> None:
 
     assert response.status_code == 200
     assert mock_orchestrator.calls == [("Create a technical plan", "workflow-123")]
+
+
+def test_run_workflow_endpoint_validates_workflow_id_length() -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "Create a technical plan", "workflow_id": "x" * 65},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert mock_orchestrator.calls == []
