@@ -1,36 +1,73 @@
 # AI Agent Orchestration Dashboard
 
-AI Agent Orchestration Dashboard is a full-stack software engineering portfolio project that demonstrates how a backend can coordinate multiple specialized AI agents and stream their progress to a modern frontend dashboard.
+A full-stack dashboard that runs a task through a sequence of specialized AI agents, persists the workflow, and streams live progress to a React interface.
 
-The application uses a FastAPI backend, a React + TypeScript frontend, OpenRouter-compatible model calls, SQLite persistence, Server-Sent Events, and Docker-based development setup. It is designed to run on CPU-only environments and does not require GPU support.
+This repository is built as a software engineering portfolio project. It demonstrates backend orchestration, API design, persistence, real-time updates, frontend data flows, Docker-based development, and testable service boundaries.
 
-## Project Overview
+## Highlights
 
-Instead of sending a task to one model and waiting for one answer, this project models a small sequential agent team:
+- FastAPI backend with a sequential multi-agent orchestration service.
+- React + TypeScript dashboard for running workflows and reviewing saved results.
+- Live workflow updates with Server-Sent Events.
+- React Flow visualization for agent status and execution order.
+- SQLite persistence with SQLAlchemy repository layer.
+- OpenRouter-compatible model client with mocked tests.
+- Docker Compose setup for CPU-only development.
+- Backend pytest suite covering agents, orchestration, persistence, SSE events, and API contract.
+- Frontend Vitest, ESLint, and Prettier setup.
+- Ruff linting and formatting for Python.
+- Makefile shortcuts for common development tasks.
 
-1. Planner Agent breaks down the request.
-2. Research Agent adds context and constraints.
-3. Technical Architect Agent proposes structure and technology choices.
-4. Developer Agent turns the plan into implementation guidance.
-5. Reviewer Agent checks the result for gaps and risks.
-6. Final Answer Agent combines the work into a clean response.
-
-The backend owns orchestration, persistence, model integration, and live event streaming. The frontend provides the workflow launch screen, run history, detail views, status cards, and graph visualization.
-
-## Architecture Diagram
+## Demo Flow
 
 ```text
-User
+User submits a task
   |
   v
+Planner Agent
+  |
+  v
+Research Agent
+  |
+  v
+Technical Architect Agent
+  |
+  v
+Developer Agent
+  |
+  v
+Reviewer Agent
+  |
+  v
+Final Answer Agent
+  |
+  v
+Saved workflow + live dashboard updates
+```
+
+Each agent receives the original task plus the outputs from previous agents. The frontend opens an SSE connection before submitting the workflow, so the graph and result cards update while the backend is still running.
+
+## Screenshots
+
+Add screenshots after running the project locally:
+
+```text
+docs/screenshots/dashboard.png        # Health status and project overview
+docs/screenshots/workflow-run.png     # Live multi-agent workflow run
+docs/screenshots/workflow-detail.png  # Saved workflow detail page
+docs/screenshots/history.png          # Workflow history
+```
+
+## Architecture
+
+```text
 React + TypeScript Dashboard (Vite)
   |  POST /api/workflows/run
-  |  GET  /api/workflows/{id}/events
+  |  GET  /api/workflows/{workflow_id}/events
   v
 FastAPI Backend
   |
   +--> SequentialOrchestrator
-  |      |
   |      +--> Planner -> Researcher -> Architect -> Developer -> Reviewer -> Final Answer
   |              |
   |              v
@@ -41,21 +78,7 @@ FastAPI Backend
   +--> WorkflowRepository -> SQLite workflow_runs + agent_execution_steps
 ```
 
-## Features
-
-- Sequential multi-agent workflow orchestration.
-- Specialized agent roles with dedicated prompts and responsibilities.
-- OpenRouter API client abstraction.
-- FastAPI endpoints for health checks, planner runs, workflow runs, history, detail, and live events.
-- SQLite persistence for workflow runs and per-agent execution steps.
-- Server-Sent Events for real-time workflow status updates.
-- React dashboard with workflow run form, history, detail view, and React Flow graph.
-- Docker Compose development environment with backend and frontend bind mounts.
-- Backend pytest suite covering agents, orchestration, persistence, events, models, and API contract.
-- Frontend Vitest coverage for display helpers.
-- Ruff configuration for Python linting and formatting.
-- ESLint and Prettier configuration for frontend quality checks.
-- Makefile task shortcuts for common local workflows.
+More detail: [docs/architecture.md](docs/architecture.md)
 
 ## Tech Stack
 
@@ -75,98 +98,44 @@ FastAPI Backend
 | Quality tools | Ruff, ESLint, Prettier |
 | DevOps | Docker, Docker Compose, Makefile |
 
-## Screenshots
+## Quick Start With Docker
 
-Screenshots can be added after running the app locally:
+Prerequisites:
 
-```text
-docs/screenshots/dashboard.png        # Dashboard overview
-docs/screenshots/workflow-run.png     # Live workflow execution
-docs/screenshots/workflow-detail.png  # Saved workflow detail view
-docs/screenshots/history.png          # Workflow history
-```
+- Docker and Docker Compose
+- OpenRouter API key for live model calls
 
-Suggested portfolio captions:
-
-- Dashboard overview with backend health status.
-- Live multi-agent workflow graph while agents run.
-- Final answer and per-agent reasoning cards.
-- Persisted workflow history and detail pages.
-
-## Repository Structure
-
-```text
-ai-agent-orchestration-dashboard/
-  backend/
-    app/
-      agents/          Specialized agent implementations
-      api/             FastAPI routers and route handlers
-      core/            Settings and configuration
-      db/              SQLAlchemy session and ORM models
-      models/          Pydantic domain models
-      repositories/    Persistence access layer
-      services/        OpenRouter client, orchestrator, event bus
-    tests/             pytest suite
-    Dockerfile
-    pyproject.toml
-    requirements.txt
-  frontend/
-    src/
-      api/             Axios client and workflow API helpers
-      components/      Layout, UI, and workflow graph components
-      hooks/           Live workflow event hook
-      lib/             Display helpers and navigation constants
-      pages/           Dashboard, run, history, and detail pages
-      types/           TypeScript workflow types
-    Dockerfile
-    package.json
-  docs/
-    architecture.md
-    development.md
-  docker-compose.yml
-  Makefile
-  README.md
-```
-
-## Setup Instructions
-
-### Option 1: Docker Compose
-
-Create a local environment file if you want to override defaults:
+Create a local environment file:
 
 ```bash
 cp .env.example .env
 ```
 
-Build images:
+Build and run both services:
 
 ```bash
 docker compose build
-```
-
-Run the full application:
-
-```bash
 docker compose up
 ```
 
-Run only the backend:
+Open:
+
+- Frontend: `http://localhost:5173`
+- Backend API: `http://localhost:8000`
+- API docs: `http://localhost:8000/docs`
+
+Run one service:
 
 ```bash
 docker compose up backend
-```
-
-Run only the frontend:
-
-```bash
 docker compose up frontend
 ```
 
-Backend: `http://localhost:8000`
+The Docker setup uses CPU-friendly defaults and does not require a GPU.
 
-Frontend: `http://localhost:5173`
+## Local Development
 
-### Option 2: Local Backend
+### Backend
 
 ```bash
 cd backend
@@ -177,13 +146,13 @@ cp .env.example .env
 python -m uvicorn app.main:app --reload
 ```
 
-Windows PowerShell activation:
+Windows PowerShell:
 
 ```powershell
 .\.venv\Scripts\Activate.ps1
 ```
 
-### Option 3: Local Frontend
+### Frontend
 
 ```bash
 cd frontend
@@ -192,7 +161,7 @@ cp .env.example .env
 npm run dev
 ```
 
-The frontend expects the backend API at `http://localhost:8000` by default.
+The frontend expects the backend at `http://localhost:8000` unless `VITE_API_BASE_URL` is changed.
 
 ## Makefile Commands
 
@@ -219,16 +188,16 @@ make format
 
 ## Environment Variables
 
-### Root Docker Compose `.env`
+### Docker Compose `.env`
 
-| Variable | Example | Description |
+| Variable | Default or example | Description |
 | --- | --- | --- |
-| `OPENROUTER_API_KEY` | `sk-or-...` | Optional API key for live model calls. |
+| `OPENROUTER_API_KEY` | empty | Required for live model calls; tests and static UI work without it. |
 | `OPENROUTER_MODEL` | `openai/gpt-4o-mini` | Model routed through OpenRouter. |
 | `OPENROUTER_BASE_URL` | `https://openrouter.ai/api/v1` | OpenRouter-compatible API base URL. |
 | `OPENROUTER_TIMEOUT_SECONDS` | `60` | HTTP timeout for model calls. |
-| `DATABASE_URL` | `sqlite:////data/orchestration.db` | SQLite database location inside Docker. |
-| `CORS_ALLOWED_ORIGINS` | `["http://localhost:5173"]` | Allowed frontend origins. |
+| `DATABASE_URL` | `sqlite:////data/orchestration.db` | SQLite path inside Docker. |
+| `CORS_ALLOWED_ORIGINS` | `["http://localhost:5173","http://127.0.0.1:5173"]` | Allowed frontend origins. |
 | `VITE_API_BASE_URL` | `http://localhost:8000` | Browser-facing backend URL. |
 
 ### Backend `backend/.env`
@@ -256,15 +225,15 @@ VITE_API_BASE_URL=http://localhost:8000
 | Method | Endpoint | Description |
 | --- | --- | --- |
 | `GET` | `/health` | API health, version, and environment metadata. |
-| `POST` | `/api/agents/planner/run` | Run only the planner agent for a task. |
-| `POST` | `/api/workflows/run` | Run the complete sequential multi-agent workflow. |
+| `POST` | `/api/agents/planner/run` | Run the planner agent only. |
+| `POST` | `/api/workflows/run` | Run the complete sequential workflow. |
 | `GET` | `/api/workflows` | List persisted workflow runs. |
-| `GET` | `/api/workflows/{workflow_id}` | Read one persisted workflow run with steps. |
-| `GET` | `/api/workflows/{workflow_id}/events` | Stream live workflow events with Server-Sent Events. |
-| `GET` | `/openapi.json` | OpenAPI schema generated by FastAPI. |
-| `GET` | `/docs` | Interactive Swagger UI generated by FastAPI. |
+| `GET` | `/api/workflows/{workflow_id}` | Read one workflow with all agent steps. |
+| `GET` | `/api/workflows/{workflow_id}/events` | Stream live workflow events with SSE. |
+| `GET` | `/docs` | FastAPI Swagger UI. |
+| `GET` | `/openapi.json` | OpenAPI schema. |
 
-Run a full workflow:
+Run a workflow:
 
 ```bash
 curl -X POST http://localhost:8000/api/workflows/run \
@@ -272,7 +241,7 @@ curl -X POST http://localhost:8000/api/workflows/run \
   -d '{"task": "Analyze this startup idea and create a technical implementation plan."}'
 ```
 
-Run a workflow with a client-generated ID for live event subscriptions:
+Run with a client-generated workflow ID for live event subscriptions:
 
 ```bash
 curl -X POST http://localhost:8000/api/workflows/run \
@@ -280,15 +249,15 @@ curl -X POST http://localhost:8000/api/workflows/run \
   -d '{"workflow_id": "demo-workflow-1", "task": "Design a secure internal AI support tool for a SaaS company."}'
 ```
 
-Stream workflow events:
+Stream live events:
 
 ```bash
 curl -N http://localhost:8000/api/workflows/demo-workflow-1/events
 ```
 
-## Sample Tasks To Try
+## Sample Tasks
 
-Use these in the Workflow Run page or with `POST /api/workflows/run`:
+Try these from the Workflow Run page or `POST /api/workflows/run`:
 
 - `Analyze a B2B SaaS idea for AI-powered customer onboarding and create a technical implementation plan.`
 - `Design an internal support dashboard that summarizes customer tickets and routes escalations to specialists.`
@@ -317,25 +286,60 @@ npm run format:check
 npm run build
 ```
 
-The backend tests mock model calls and use temporary SQLite databases where needed, so they do not require a real OpenRouter key or a committed local database file.
+The backend tests mock model calls and use temporary SQLite databases, so they do not require a real OpenRouter key or a committed database file.
 
-## Docker Notes
+## Repository Structure
 
-- Backend image: Python slim.
-- Frontend image: Node slim.
-- Backend port: `8000`.
-- Frontend port: `5173`.
-- Source code is bind-mounted for development.
-- `backend_data` stores Docker SQLite data.
-- `frontend_node_modules` keeps container dependencies separate from the host.
-- `CUDA_VISIBLE_DEVICES` is set to an empty value for a CPU-friendly default.
+```text
+ai-agent-orchestration-dashboard/
+  backend/
+    app/
+      agents/          Role-specific agent classes
+      api/             FastAPI routers
+      core/            Settings
+      db/              SQLAlchemy session and ORM models
+      models/          Pydantic domain models
+      repositories/    Persistence access layer
+      services/        OpenRouter client, orchestrator, event bus
+    tests/             pytest suite
+    Dockerfile
+    pyproject.toml
+    requirements.txt
+  frontend/
+    src/
+      api/             Axios API helpers
+      components/      Layout, UI, workflow components
+      hooks/           SSE workflow event hook
+      lib/             Display helpers
+      pages/           Dashboard, run, history, detail pages
+      types/           TypeScript workflow types
+    Dockerfile
+    package.json
+  docs/
+    architecture.md
+    development.md
+  docker-compose.yml
+  Makefile
+  README.md
+```
+
+## Portfolio Focus
+
+This project is intended to show:
+
+- Clean separation between API routes, services, repositories, and domain models.
+- Practical orchestration of multiple model-backed agents.
+- Real-time frontend updates without introducing a message broker.
+- Testable backend logic with mocked external API calls.
+- A development environment that can run locally or in Docker.
 
 ## Future Improvements
 
-1. Add parallel or conditional orchestration workflows.
-2. Add authentication and project/team workspaces.
-3. Add background job processing for long-running workflows.
-4. Add richer workflow analytics and run comparison views.
+1. Add parallel and conditional orchestration workflows.
+2. Move long-running workflows to a background worker and queue.
+3. Add authentication, project workspaces, and team access.
+4. Add PostgreSQL support for multi-user deployments.
 5. Add model/provider selection in the frontend.
-6. Add production Docker targets with a built static frontend.
-7. Add screenshot assets and an animated demo GIF for the portfolio README.
+6. Add richer workflow analytics and run comparison views.
+7. Add production Docker targets with a built static frontend.
+8. Add screenshot assets and a short demo GIF.
