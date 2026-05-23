@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.agents.planner_agent import PlannerAgent
 from app.models.agent import AgentExecutionResult
@@ -10,6 +10,8 @@ router = APIRouter(prefix="/api/agents", tags=["agents"])
 
 class PlannerRunRequest(BaseModel):
     """Request payload for running the planner agent."""
+
+    model_config = ConfigDict(str_strip_whitespace=True)
 
     task: str = Field(
         ...,

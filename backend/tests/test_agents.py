@@ -112,13 +112,14 @@ def test_run_planner_endpoint_returns_agent_execution_result() -> None:
     assert mock_client.calls[0][1] == "Create an AI agent orchestration dashboard"
 
 
-def test_run_planner_endpoint_validates_empty_task() -> None:
+@pytest.mark.parametrize("task", ["", "   "])
+def test_run_planner_endpoint_validates_blank_task(task: str) -> None:
     mock_client = MockOpenRouterClient()
     app.dependency_overrides[get_openrouter_client] = lambda: mock_client
 
     try:
         client = TestClient(app)
-        response = client.post("/api/agents/planner/run", json={"task": ""})
+        response = client.post("/api/agents/planner/run", json={"task": task})
     finally:
         app.dependency_overrides.clear()
 
