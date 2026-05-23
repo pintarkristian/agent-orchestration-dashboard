@@ -50,7 +50,11 @@ class MockAgent:
 
 
 class MockOrchestrator:
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, str | None]] = []
+
     async def run(self, task: str, workflow_id: str | None = None):
+        self.calls.append((task, workflow_id))
         return await SequentialOrchestrator(
             agents=[
                 MockAgent(AgentRole.PLANNER, "Planner output"),
@@ -146,7 +150,8 @@ async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
 
 
 def test_run_workflow_endpoint_returns_workflow_result() -> None:
-    app.dependency_overrides[get_orchestrator] = lambda: MockOrchestrator()
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
 
     try:
         client = TestClient(app)
@@ -158,6 +163,9 @@ def test_run_workflow_endpoint_returns_workflow_result() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 200
+    assert mock_orchestrator.calls == [
+        ("Analyze this startup idea and create a technical implementation plan.", None)
+    ]
 
     data = response.json()
     assert data["id"]
@@ -177,13 +185,50 @@ def test_run_workflow_endpoint_returns_workflow_result() -> None:
     ]
 
 
-def test_run_workflow_endpoint_validates_empty_task() -> None:
-    app.dependency_overrides[get_orchestrator] = lambda: MockOrchestrator()
+@pytest.mark.parametrize("task", ["", "   "])
+def test_run_workflow_endpoint_validates_blank_task(task: str) -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
 
     try:
         client = TestClient(app)
-        response = client.post("/api/workflows/run", json={"task": ""})
+        response = client.post("/api/workflows/run", json={"task": task})
     finally:
         app.dependency_overrides.clear()
 
     assert response.status_code == 422
+    assert mock_orchestrator.calls == []
+
+
+def test_run_workflow_endpoint_strips_task_and_workflow_id() -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "  Create a technical plan  ", "workflow_id": "  workflow-123  "},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 200
+    assert mock_orchestrator.calls == [("Create a technical plan", "workflow-123")]
+
+
+def test_run_workflow_endpoint_validates_workflow_id_length() -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "Create a technical plan", "workflow_id": "x" * 65},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert mock_orchestrator.calls == []

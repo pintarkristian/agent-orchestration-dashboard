@@ -4,7 +4,7 @@ from collections.abc import AsyncIterator
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
@@ -21,6 +21,8 @@ router = APIRouter(prefix="/api/workflows", tags=["workflows"])
 class WorkflowRunRequest(BaseModel):
     """Request payload for running a sequential workflow."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     task: str = Field(
         ...,
         min_length=1,
@@ -29,6 +31,7 @@ class WorkflowRunRequest(BaseModel):
     workflow_id: str | None = Field(
         default=None,
         min_length=1,
+        max_length=64,
         description="Optional client-generated workflow id used for live event subscriptions.",
     )
 
