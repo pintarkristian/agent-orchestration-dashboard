@@ -11,6 +11,8 @@ from app.db.models import AgentExecutionStepRecord, WorkflowRunRecord
 from app.models.enums import AgentRole, WorkflowStatus
 from app.models.workflow import WorkflowResult, WorkflowStep
 
+_STRUCTURED_VALUE_MARKER = "__ai_agent_orchestration_dashboard_value__"
+
 
 class WorkflowRepository:
     """Repository for persisted workflow runs and agent steps."""
@@ -27,7 +29,7 @@ class WorkflowRepository:
 
         record = WorkflowRunRecord(
             id=result.id,
-            original_task=self._serialize(result.input) or "",
+            original_task=self._serialize_value(result.input) or "",
             status=result.status.value,
             final_answer=self._serialize(result.final_answer),
             error=result.error,
@@ -44,8 +46,8 @@ class WorkflowRepository:
                 agent_role=step.role.value,
                 name=step.name,
                 description=step.description,
-                input=self._serialize(step.input),
-                output=self._serialize(step.output),
+                input=self._serialize_value(step.input),
+                output=self._serialize_value(step.output),
                 status=step.status.value,
                 error=step.error,
                 started_at=step.started_at,
@@ -92,8 +94,8 @@ class WorkflowRepository:
                 role=AgentRole(step.agent_role),
                 name=step.name,
                 description=step.description,
-                input=step.input,
-                output=step.output,
+                input=self._deserialize_value(step.input),
+                output=self._deserialize_value(step.output),
                 status=WorkflowStatus(step.status),
                 error=step.error,
                 started_at=step.started_at,
@@ -105,7 +107,7 @@ class WorkflowRepository:
 
         return WorkflowResult(
             id=record.id,
-            input=record.original_task,
+            input=self._deserialize_value(record.original_task),
             output=record.final_answer,
             final_answer=record.final_answer,
             status=WorkflowStatus(record.status),
@@ -120,12 +122,45 @@ class WorkflowRepository:
 
     @staticmethod
     def _serialize(value: Any) -> str | None:
-        """Store string values directly and JSON-encode structured values."""
+        """Store string values directly and JSON-encode fallback values."""
         if value is None:
             return None
         if isinstance(value, str):
             return value
         return json.dumps(value, ensure_ascii=False)
+
+    @staticmethod
+    def _serialize_value(value: str | dict[str, Any] | None) -> str | None:
+        """Store workflow values with a marker when they were structured."""
+        if value is None or isinstance(value, str):
+            return value
+        return json.dumps(
+            {
+                _STRUCTURED_VALUE_MARKER: True,
+                "value": value,
+            },
+            ensure_ascii=False,
+        )
+
+    @staticmethod
+    def _deserialize_value(value: str | None) -> str | dict[str, Any] | None:
+        """Restore structured workflow values without changing ordinary strings."""
+        if value is None:
+            return None
+
+        try:
+            decoded = json.loads(value)
+        except json.JSONDecodeError:
+            return value
+
+        if (
+            isinstance(decoded, dict)
+            and decoded.get(_STRUCTURED_VALUE_MARKER) is True
+            and isinstance(decoded.get("value"), dict)
+        ):
+            return decoded["value"]
+
+        return value
 
 
 __all__ = ["WorkflowRepository"]

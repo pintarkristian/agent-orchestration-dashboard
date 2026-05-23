@@ -46,7 +46,7 @@ def sample_workflow_result() -> WorkflowResult:
     completed_at = datetime.now(UTC)
     return WorkflowResult(
         id="workflow-test-1",
-        input="Analyze a startup idea",
+        input={"task": "Analyze a startup idea", "priority": "high"},
         output="Final response",
         final_answer="Final response",
         status=WorkflowStatus.COMPLETED,
@@ -61,8 +61,8 @@ def sample_workflow_result() -> WorkflowResult:
                 role=AgentRole.PLANNER,
                 name="Planner Agent",
                 description="Breaks the task into smaller steps.",
-                input="Original task",
-                output="Planner output",
+                input={"task": "Analyze a startup idea"},
+                output={"plan": "Planner output"},
                 status=WorkflowStatus.COMPLETED,
                 error=None,
                 started_at=started_at,
@@ -94,17 +94,21 @@ def test_workflow_repository_saves_and_reads_workflow(tmp_path) -> None:
         saved = repository.save_workflow_result(sample_workflow_result())
 
         assert saved.id == "workflow-test-1"
-        assert saved.input == "Analyze a startup idea"
+        assert saved.input == {"task": "Analyze a startup idea", "priority": "high"}
         assert saved.status == WorkflowStatus.COMPLETED
         assert saved.final_answer == "Final response"
         assert len(saved.steps) == 2
         assert saved.steps[0].role == AgentRole.PLANNER
+        assert saved.steps[0].input == {"task": "Analyze a startup idea"}
+        assert saved.steps[0].output == {"plan": "Planner output"}
         assert saved.steps[1].role == AgentRole.FINAL_ANSWER
 
         loaded = repository.get_workflow("workflow-test-1")
         assert loaded is not None
         assert loaded.id == saved.id
-        assert loaded.steps[0].output == "Planner output"
+        assert loaded.input == {"task": "Analyze a startup idea", "priority": "high"}
+        assert loaded.steps[0].input == {"task": "Analyze a startup idea"}
+        assert loaded.steps[0].output == {"plan": "Planner output"}
 
         all_workflows = repository.list_workflows()
         assert len(all_workflows) == 1
