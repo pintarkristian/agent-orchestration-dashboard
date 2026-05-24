@@ -97,6 +97,10 @@ class OpenRouterClient:
         parsed = httpx.URL(normalized)
         if parsed.scheme not in {"http", "https"} or not parsed.host:
             raise ValueError("base_url must be an absolute HTTP(S) URL.")
+        if parsed.query or parsed.fragment:
+            raise ValueError("base_url must not include a query string or fragment.")
+        if parsed.username or parsed.password:
+            raise ValueError("base_url must not include credentials.")
 
         return normalized
 
