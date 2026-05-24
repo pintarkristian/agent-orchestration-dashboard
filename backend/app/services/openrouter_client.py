@@ -106,6 +106,11 @@ class OpenRouterClient:
             return response_text
         return f"{response_text[: cls._MAX_ERROR_BODY_LENGTH].rstrip()}... [truncated]"
 
+    @staticmethod
+    def _normalize_prompt(value: str, *, field_name: str) -> str:
+        """Normalize prompt text before it is sent to OpenRouter."""
+        return OpenRouterClient._normalize_required_text(value, field_name=field_name)
+
     async def generate_completion(self, system_prompt: str, user_prompt: str) -> str:
         """Generate a chat completion using OpenRouter.
 
@@ -116,6 +121,8 @@ class OpenRouterClient:
         Returns:
             The first assistant message content returned by OpenRouter.
         """
+        system_prompt = self._normalize_prompt(system_prompt, field_name="system_prompt")
+        user_prompt = self._normalize_prompt(user_prompt, field_name="user_prompt")
         payload: dict[str, Any] = {
             "model": self.model,
             "messages": [
