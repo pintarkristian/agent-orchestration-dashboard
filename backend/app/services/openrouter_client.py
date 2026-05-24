@@ -30,6 +30,8 @@ class OpenRouterTimeoutError(OpenRouterClientError):
 class OpenRouterClient:
     """Async client for OpenRouter chat completion requests."""
 
+    _MAX_ERROR_BODY_LENGTH = 500
+
     def __init__(
         self,
         api_key: str | None = None,
@@ -97,6 +99,13 @@ class OpenRouterClient:
 
         return normalized
 
+    @classmethod
+    def _truncate_error_body(cls, response_text: str) -> str:
+        """Keep provider error bodies readable without letting them dominate logs."""
+        if len(response_text) <= cls._MAX_ERROR_BODY_LENGTH:
+            return response_text
+        return f"{response_text[: cls._MAX_ERROR_BODY_LENGTH].rstrip()}... [truncated]"
+
     async def generate_completion(self, system_prompt: str, user_prompt: str) -> str:
         """Generate a chat completion using OpenRouter.
 
@@ -122,8 +131,9 @@ class OpenRouterClient:
         except httpx.TimeoutException as exc:
             raise OpenRouterTimeoutError("OpenRouter request timed out.") from exc
         except httpx.HTTPStatusError as exc:
+            response_text = self._truncate_error_body(exc.response.text)
             raise OpenRouterHTTPError(
-                f"OpenRouter returned HTTP {exc.response.status_code}: {exc.response.text}"
+                f"OpenRouter returned HTTP {exc.response.status_code}: {response_text}"
             ) from exc
         except httpx.HTTPError as exc:
             raise OpenRouterHTTPError(f"OpenRouter request failed: {exc}") from exc

@@ -167,6 +167,27 @@ async def test_generate_completion_wraps_http_status_errors() -> None:
 
 
 @pytest.mark.asyncio
+async def test_generate_completion_truncates_large_http_error_bodies() -> None:
+    error_body = "rate limited " * 100
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=429, text=error_body)
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(OpenRouterHTTPError) as exc_info:
+        await client.generate_completion("system", "user")
+
+    message = str(exc_info.value)
+    assert message.startswith("OpenRouter returned HTTP 429: rate limited")
+    assert message.endswith("... [truncated]")
+    assert len(message) < len(error_body)
+
+
+@pytest.mark.asyncio
 async def test_generate_completion_wraps_timeout_errors() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.TimeoutException("request timed out")
