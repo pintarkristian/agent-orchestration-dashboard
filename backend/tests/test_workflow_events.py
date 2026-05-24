@@ -109,6 +109,16 @@ async def test_workflow_event_bus_limits_replay_history() -> None:
     ]
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize("workflow_id", ["", "   ", ".workflow-1", "workflow/1", "x" * 65])
+async def test_workflow_event_bus_rejects_invalid_subscription_ids(workflow_id: str) -> None:
+    bus = WorkflowEventBus()
+
+    with pytest.raises(ValueError):
+        async for _event in bus.subscribe(workflow_id):
+            pass
+
+
 def test_workflow_event_bus_rejects_invalid_history_limit() -> None:
     with pytest.raises(ValueError, match="max_history_per_workflow must be at least 1"):
         WorkflowEventBus(max_history_per_workflow=0)

@@ -4,6 +4,7 @@ import asyncio
 from collections import defaultdict
 from collections.abc import AsyncIterator
 
+from app.models.identifiers import validate_workflow_id
 from app.models.workflow_event import TERMINAL_WORKFLOW_EVENTS, WorkflowEvent
 
 
@@ -40,6 +41,7 @@ class WorkflowEventBus:
 
     async def subscribe(self, workflow_id: str) -> AsyncIterator[WorkflowEvent]:
         """Yield historical and future events for a workflow."""
+        workflow_id = validate_workflow_id(workflow_id)
         queue: asyncio.Queue[WorkflowEvent] = asyncio.Queue()
 
         async with self._lock:
