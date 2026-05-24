@@ -11,7 +11,7 @@ from app.db.models import Base
 
 def _connect_args(database_url: str) -> dict[str, bool]:
     """Return SQLAlchemy connect args for the configured database."""
-    if database_url.startswith("sqlite"):
+    if database_url.lower().startswith("sqlite"):
         return {"check_same_thread": False}
     return {}
 
