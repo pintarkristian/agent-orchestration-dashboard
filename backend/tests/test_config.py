@@ -70,7 +70,15 @@ def test_settings_reject_invalid_cors_origin_lists(origins: list[str]) -> None:
 
 @pytest.mark.parametrize(
     "origin",
-    ["localhost:5173", "/dashboard", "ftp://localhost:5173"],
+    [
+        "localhost:5173",
+        "/dashboard",
+        "ftp://localhost:5173",
+        "http://localhost:5173/dashboard",
+        "http://localhost:5173?debug=true",
+        "http://localhost:5173#app",
+        "http://user:pass@localhost:5173",
+    ],
 )
 def test_settings_reject_non_http_cors_origins(origin: str) -> None:
     with pytest.raises(ValidationError):

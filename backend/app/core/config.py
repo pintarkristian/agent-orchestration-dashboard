@@ -46,6 +46,10 @@ class Settings(BaseSettings):
             parsed = urlparse(origin)
             if parsed.scheme not in {"http", "https"} or not parsed.netloc:
                 raise ValueError("cors_allowed_origins must be absolute HTTP(S) origins")
+            if parsed.path not in {"", "/"} or parsed.params or parsed.query or parsed.fragment:
+                raise ValueError("cors_allowed_origins must not include paths or query strings")
+            if parsed.username or parsed.password:
+                raise ValueError("cors_allowed_origins must not include credentials")
             if origin not in deduplicated_origins:
                 deduplicated_origins.append(origin)
 
