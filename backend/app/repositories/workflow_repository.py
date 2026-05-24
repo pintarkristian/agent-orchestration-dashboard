@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.db.models import AgentExecutionStepRecord, WorkflowRunRecord
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.identifiers import validate_workflow_id
 from app.models.workflow import WorkflowResult, WorkflowStep
 
 _SERIALIZED_VALUE_KIND = "kind"
@@ -80,6 +81,7 @@ class WorkflowRepository:
 
     def get_workflow(self, workflow_id: str) -> WorkflowResult | None:
         """Return one workflow run by id."""
+        workflow_id = validate_workflow_id(workflow_id)
         statement = (
             select(WorkflowRunRecord)
             .where(WorkflowRunRecord.id == workflow_id)
