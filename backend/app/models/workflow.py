@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH, WORKFLOW_ID_PATTERN
 
 
 class WorkflowStep(BaseModel):
@@ -14,7 +15,12 @@ class WorkflowStep(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     role: AgentRole
     name: str = Field(min_length=1)
     description: str | None = Field(default=None, min_length=1)
@@ -33,7 +39,12 @@ class WorkflowRun(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     input: str | dict[str, Any] = Field(min_length=1)
     status: WorkflowStatus = WorkflowStatus.PENDING
     steps: list[WorkflowStep] = Field(default_factory=list)
@@ -49,7 +60,12 @@ class WorkflowResult(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     input: str | dict[str, Any] | None = Field(default=None, min_length=1)
     output: str | dict[str, Any] | None = Field(default=None, min_length=1)
     final_answer: str | None = Field(default=None, min_length=1)

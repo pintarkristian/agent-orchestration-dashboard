@@ -127,6 +127,24 @@ def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -
         WorkflowStep(**payload)
 
 
+@pytest.mark.parametrize(
+    ("model_class", "payload"),
+    [
+        (WorkflowStep, {"role": AgentRole.PLANNER, "name": "Planner Agent"}),
+        (WorkflowRun, {"input": "Create a plan"}),
+        (WorkflowResult, {"status": WorkflowStatus.COMPLETED}),
+    ],
+)
+@pytest.mark.parametrize("model_id", ["", ".workflow-1", "workflow/1", "x" * 65])
+def test_workflow_models_reject_invalid_ids(
+    model_class: type[WorkflowStep | WorkflowRun | WorkflowResult],
+    payload: dict[str, object],
+    model_id: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        model_class(id=model_id, **payload)
+
+
 def test_workflow_run_creation_defaults_to_pending() -> None:
     run = WorkflowRun(input="  Build an orchestration dashboard  ")
 
