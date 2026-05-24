@@ -31,6 +31,8 @@ class WorkflowEventBus:
         """Publish one workflow event to active subscribers and history."""
         async with self._lock:
             history = self._history[event.workflow_id]
+            if any(history_event.event in TERMINAL_WORKFLOW_EVENTS for history_event in history):
+                return
             history.append(event)
             if len(history) > self.max_history_per_workflow:
                 del history[: len(history) - self.max_history_per_workflow]
