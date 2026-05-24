@@ -96,6 +96,12 @@ async def test_generate_completion_strips_api_key_whitespace() -> None:
     assert captured_requests[0].headers["Authorization"] == "Bearer test-api-key"
 
 
+@pytest.mark.parametrize("timeout_seconds", [0, -1])
+def test_openrouter_client_rejects_non_positive_timeout(timeout_seconds: float) -> None:
+    with pytest.raises(ValueError, match="timeout_seconds must be greater than 0"):
+        OpenRouterClient(api_key="test-api-key", timeout_seconds=timeout_seconds)
+
+
 @pytest.mark.asyncio
 async def test_generate_completion_wraps_http_status_errors() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:

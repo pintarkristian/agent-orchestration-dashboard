@@ -46,6 +46,8 @@ class OpenRouterClient:
         self.timeout_seconds = (
             timeout_seconds if timeout_seconds is not None else settings.openrouter_timeout_seconds
         )
+        if self.timeout_seconds <= 0:
+            raise ValueError("timeout_seconds must be greater than 0.")
         self._transport = transport
 
     def build_headers(self) -> dict[str, str]:
