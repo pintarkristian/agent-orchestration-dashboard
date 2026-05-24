@@ -49,6 +49,12 @@ def test_settings_reject_blank_application_text_fields(field_name: str) -> None:
         Settings(**{field_name: "   "})
 
 
+@pytest.mark.parametrize("database_url", ["orchestration.db", "./orchestration.db"])
+def test_settings_reject_database_urls_without_scheme(database_url: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(database_url=database_url)
+
+
 @pytest.mark.parametrize(
     "field_name",
     ["openrouter_model", "openrouter_base_url"],

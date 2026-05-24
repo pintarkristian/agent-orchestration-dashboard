@@ -65,6 +65,15 @@ class Settings(BaseSettings):
         normalized_api_key = api_key.strip()
         return normalized_api_key or None
 
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, database_url: str) -> str:
+        """Require a URL-like SQLAlchemy database URL."""
+        parsed = urlparse(database_url)
+        if not parsed.scheme:
+            raise ValueError("database_url must include a scheme")
+        return database_url
+
 
 @lru_cache
 def get_settings() -> Settings:
