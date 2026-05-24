@@ -55,6 +55,16 @@ class Settings(BaseSettings):
 
         return deduplicated_origins
 
+    @field_validator("openrouter_api_key")
+    @classmethod
+    def normalize_openrouter_api_key(cls, api_key: str | None) -> str | None:
+        """Treat blank API key configuration as missing."""
+        if api_key is None:
+            return None
+
+        normalized_api_key = api_key.strip()
+        return normalized_api_key or None
+
 
 @lru_cache
 def get_settings() -> Settings:

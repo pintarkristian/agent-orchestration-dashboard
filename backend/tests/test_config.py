@@ -11,6 +11,7 @@ def test_settings_strip_application_text_fields() -> None:
         database_url="  sqlite:///./test.db  ",
         openrouter_model="  test/model  ",
         openrouter_base_url="  https://openrouter.ai/api/v1  ",
+        openrouter_api_key="  sk-test-key  ",
         cors_allowed_origins=["  http://localhost:5173  "],
     )
 
@@ -20,6 +21,7 @@ def test_settings_strip_application_text_fields() -> None:
     assert settings.database_url == "sqlite:///./test.db"
     assert settings.openrouter_model == "test/model"
     assert settings.openrouter_base_url == "https://openrouter.ai/api/v1"
+    assert settings.openrouter_api_key == "sk-test-key"
     assert settings.cors_allowed_origins == ["http://localhost:5173"]
 
 
@@ -83,3 +85,10 @@ def test_settings_reject_invalid_cors_origin_lists(origins: list[str]) -> None:
 def test_settings_reject_non_http_cors_origins(origin: str) -> None:
     with pytest.raises(ValidationError):
         Settings(cors_allowed_origins=[origin])
+
+
+@pytest.mark.parametrize("api_key", ["", "   "])
+def test_settings_normalize_blank_openrouter_api_key_to_none(api_key: str) -> None:
+    settings = Settings(openrouter_api_key=api_key)
+
+    assert settings.openrouter_api_key is None
