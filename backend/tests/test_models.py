@@ -106,17 +106,38 @@ def test_agent_execution_result_creation_with_status_and_timing() -> None:
 
     result = AgentExecutionResult(
         role=AgentRole.DEVELOPER,
-        input="Create the API skeleton.",
-        output="API skeleton created.",
+        input="  Create the API skeleton.  ",
+        output="  API skeleton created.  ",
         status=WorkflowStatus.COMPLETED,
         started_at=started_at,
         completed_at=completed_at,
         duration_ms=125,
     )
 
+    assert result.input == "Create the API skeleton."
+    assert result.output == "API skeleton created."
     assert result.status == WorkflowStatus.COMPLETED
     assert result.error is None
     assert result.duration_ms == 125
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"input": ""},
+        {"input": {}},
+        {"output": ""},
+        {"output": {}},
+        {"error": ""},
+    ],
+)
+def test_agent_execution_result_rejects_empty_payload_fields(
+    field_values: dict[str, object],
+) -> None:
+    payload = {"role": AgentRole.DEVELOPER, **field_values}
+
+    with pytest.raises(ValidationError):
+        AgentExecutionResult(**payload)
 
 
 def test_workflow_step_creation() -> None:

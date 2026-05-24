@@ -45,6 +45,8 @@ class AgentExecutionInput(BaseModel):
 class AgentExecutionResult(BaseModel):
     """Result produced by an agent after execution."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(
         default_factory=lambda: str(uuid4()),
         min_length=1,
@@ -52,10 +54,10 @@ class AgentExecutionResult(BaseModel):
         pattern=WORKFLOW_ID_PATTERN,
     )
     role: AgentRole
-    input: str | dict[str, Any] | None = None
-    output: str | dict[str, Any] | None = None
+    input: str | dict[str, Any] | None = Field(default=None, min_length=1)
+    output: str | dict[str, Any] | None = Field(default=None, min_length=1)
     status: WorkflowStatus = WorkflowStatus.PENDING
-    error: str | None = None
+    error: str | None = Field(default=None, min_length=1)
     started_at: datetime | None = None
     completed_at: datetime | None = None
     duration_ms: int | None = Field(default=None, ge=0)
