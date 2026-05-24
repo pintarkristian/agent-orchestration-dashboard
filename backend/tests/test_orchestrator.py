@@ -7,6 +7,7 @@ from app.api.routes.workflows import get_orchestrator, get_workflow_repository
 from app.main import app
 from app.models.agent import AgentExecutionResult
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.workflow_event import WorkflowEvent, WorkflowEventType
 from app.services.orchestrator import SequentialOrchestrator
 from fastapi.testclient import TestClient
 
@@ -79,6 +80,14 @@ class ExistingWorkflowRepository:
     def get_workflow(self, workflow_id: str) -> object:
         self.workflow_ids.append(workflow_id)
         return object()
+
+
+class RecordingEventPublisher:
+    def __init__(self) -> None:
+        self.events: list[WorkflowEvent] = []
+
+    async def publish(self, event: WorkflowEvent) -> None:
+        self.events.append(event)
 
 
 def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
@@ -252,6 +261,29 @@ async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
     assert result.steps[-1].status == WorkflowStatus.FAILED
     assert agents[4].inputs == []
     assert agents[5].inputs == []
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_failed_event_includes_failed_step_context() -> None:
+    agents = build_mock_agents(failing_role=AgentRole.DEVELOPER)
+    event_publisher = RecordingEventPublisher()
+    orchestrator = SequentialOrchestrator(
+        agents=agents,
+        event_publisher=event_publisher,
+    )
+
+    await orchestrator.run("Create a technical plan")
+
+    failed_event = next(
+        event
+        for event in event_publisher.events
+        if event.event == WorkflowEventType.WORKFLOW_FAILED
+    )
+    assert failed_event.workflow is not None
+    assert failed_event.role == AgentRole.DEVELOPER
+    assert failed_event.step is not None
+    assert failed_event.step.role == AgentRole.DEVELOPER
+    assert failed_event.step.status == WorkflowStatus.FAILED
 
 
 def test_run_workflow_endpoint_returns_workflow_result() -> None:

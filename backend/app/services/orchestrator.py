@@ -174,6 +174,8 @@ class SequentialOrchestrator:
                         event=WorkflowEventType.WORKFLOW_FAILED,
                         status=WorkflowStatus.FAILED,
                         workflow=persisted_result,
+                        role=agent.role,
+                        step=step,
                         message=workflow_error,
                     )
                 )
