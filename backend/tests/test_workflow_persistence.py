@@ -115,6 +115,33 @@ def test_workflow_repository_saves_and_reads_workflow(tmp_path) -> None:
         assert all_workflows[0].id == saved.id
 
 
+def test_workflow_repository_preserves_marker_like_strings(tmp_path) -> None:
+    TestingSessionLocal = build_test_session(tmp_path)
+    marker_like_text = (
+        '{"__ai_agent_orchestration_dashboard_value__": true, '
+        '"value": {"unexpected": "dict"}}'
+    )
+    result = sample_workflow_result()
+    result.id = "workflow-marker-string"
+    result.input = marker_like_text
+    result.steps[0].input = marker_like_text
+    result.steps[0].output = marker_like_text
+
+    with TestingSessionLocal() as db:
+        repository = WorkflowRepository(db)
+        saved = repository.save_workflow_result(result)
+
+        assert saved.input == marker_like_text
+        assert saved.steps[0].input == marker_like_text
+        assert saved.steps[0].output == marker_like_text
+
+        loaded = repository.get_workflow(result.id)
+        assert loaded is not None
+        assert loaded.input == marker_like_text
+        assert loaded.steps[0].input == marker_like_text
+        assert loaded.steps[0].output == marker_like_text
+
+
 def test_workflow_routes_persist_runs_and_return_history(tmp_path) -> None:
     TestingSessionLocal = build_test_session(tmp_path)
     mock_openrouter_client = MockOpenRouterClient()
