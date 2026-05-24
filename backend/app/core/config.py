@@ -1,31 +1,52 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
 class Settings(BaseSettings):
     """Application settings loaded from environment variables."""
 
-    app_name: str = "AI Agent Orchestration Dashboard API"
-    app_version: str = "0.1.0"
-    environment: str = "development"
+    app_name: str = Field(default="AI Agent Orchestration Dashboard API", min_length=1)
+    app_version: str = Field(default="0.1.0", min_length=1)
+    environment: str = Field(default="development", min_length=1)
 
     openrouter_api_key: str | None = None
-    openrouter_model: str = "openai/gpt-4o-mini"
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openrouter_timeout_seconds: float = 60.0
+    openrouter_model: str = Field(default="openai/gpt-4o-mini", min_length=1)
+    openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1", min_length=1)
+    openrouter_timeout_seconds: float = Field(default=60.0, gt=0)
 
-    database_url: str = "sqlite:///./orchestration.db"
-    cors_allowed_origins: list[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    database_url: str = Field(default="sqlite:///./orchestration.db", min_length=1)
+    cors_allowed_origins: list[str] = Field(
+        default=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        min_length=1,
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
         env_file_encoding="utf-8",
         extra="ignore",
+        str_strip_whitespace=True,
     )
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def validate_cors_allowed_origins(cls, origins: list[str]) -> list[str]:
+        """Reject blank CORS origins."""
+        normalized_origins = [origin.strip() for origin in origins]
+        if any(not origin for origin in normalized_origins):
+            raise ValueError("cors_allowed_origins must not include blank origins")
+
+        for origin in normalized_origins:
+            parsed = urlparse(origin)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("cors_allowed_origins must be absolute HTTP(S) origins")
+
+        return normalized_origins
 
 
 @lru_cache

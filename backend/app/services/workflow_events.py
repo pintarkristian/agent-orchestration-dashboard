@@ -4,6 +4,7 @@ import asyncio
 from collections import defaultdict
 from collections.abc import AsyncIterator
 
+from app.models.identifiers import validate_workflow_id
 from app.models.workflow_event import TERMINAL_WORKFLOW_EVENTS, WorkflowEvent
 
 
@@ -30,6 +31,8 @@ class WorkflowEventBus:
         """Publish one workflow event to active subscribers and history."""
         async with self._lock:
             history = self._history[event.workflow_id]
+            if any(history_event.event in TERMINAL_WORKFLOW_EVENTS for history_event in history):
+                return
             history.append(event)
             if len(history) > self.max_history_per_workflow:
                 del history[: len(history) - self.max_history_per_workflow]
@@ -40,6 +43,7 @@ class WorkflowEventBus:
 
     async def subscribe(self, workflow_id: str) -> AsyncIterator[WorkflowEvent]:
         """Yield historical and future events for a workflow."""
+        workflow_id = validate_workflow_id(workflow_id)
         queue: asyncio.Queue[WorkflowEvent] = asyncio.Queue()
 
         async with self._lock:

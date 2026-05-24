@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH, WORKFLOW_ID_PATTERN
 
 
 class AgentDefinition(BaseModel):
@@ -14,7 +15,12 @@ class AgentDefinition(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     role: AgentRole
     name: str = Field(min_length=1)
     description: str = Field(min_length=1)
@@ -26,7 +32,12 @@ class AgentExecutionInput(BaseModel):
 
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     role: AgentRole
     input: str | dict[str, Any] = Field(min_length=1)
 
@@ -34,7 +45,12 @@ class AgentExecutionInput(BaseModel):
 class AgentExecutionResult(BaseModel):
     """Result produced by an agent after execution."""
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     role: AgentRole
     input: str | dict[str, Any] | None = None
     output: str | dict[str, Any] | None = None

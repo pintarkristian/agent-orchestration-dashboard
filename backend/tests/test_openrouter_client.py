@@ -50,7 +50,9 @@ async def test_generate_completion_returns_assistant_content() -> None:
     request = captured_requests[0]
     assert request.method == "POST"
     assert request.url.path == "/api/v1/chat/completions"
+    assert request.headers["Accept"] == "application/json"
     assert request.headers["Authorization"] == "Bearer test-api-key"
+    assert request.headers["Content-Type"] == "application/json"
 
     payload = json.loads(request.content.decode("utf-8"))
     assert payload["model"] == "test/model"
@@ -58,6 +60,61 @@ async def test_generate_completion_returns_assistant_content() -> None:
         {"role": "system", "content": "You are a planner."},
         {"role": "user", "content": "Create a plan."},
     ]
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_strips_prompt_whitespace() -> None:
+    captured_requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        return httpx.Response(
+            status_code=200,
+            json={"choices": [{"message": {"content": "Generated plan."}}]},
+        )
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    await client.generate_completion(
+        system_prompt="  You are a planner.  ",
+        user_prompt="\nCreate a plan.\n",
+    )
+
+    payload = json.loads(captured_requests[0].content.decode("utf-8"))
+    assert payload["messages"] == [
+        {"role": "system", "content": "You are a planner."},
+        {"role": "user", "content": "Create a plan."},
+    ]
+
+
+@pytest.mark.parametrize(
+    ("system_prompt", "user_prompt", "match"),
+    [
+        ("", "Create a plan.", "system_prompt must not be blank"),
+        ("   ", "Create a plan.", "system_prompt must not be blank"),
+        ("You are a planner.", "", "user_prompt must not be blank"),
+        ("You are a planner.", "   ", "user_prompt must not be blank"),
+    ],
+)
+@pytest.mark.asyncio
+async def test_generate_completion_rejects_blank_prompts(
+    system_prompt: str,
+    user_prompt: str,
+    match: str,
+) -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        raise AssertionError("Blank prompts should fail before sending a request.")
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(ValueError, match=match):
+        await client.generate_completion(system_prompt, user_prompt)
 
 
 @pytest.mark.asyncio

@@ -109,6 +109,50 @@ async def test_workflow_event_bus_limits_replay_history() -> None:
     ]
 
 
+@pytest.mark.asyncio
+async def test_workflow_event_bus_ignores_events_after_terminal_event() -> None:
+    bus = WorkflowEventBus()
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-4",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+            status=WorkflowStatus.RUNNING,
+        )
+    )
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-4",
+            event=WorkflowEventType.WORKFLOW_COMPLETED,
+            status=WorkflowStatus.COMPLETED,
+        )
+    )
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-4",
+            event=WorkflowEventType.AGENT_RUNNING,
+            status=WorkflowStatus.RUNNING,
+            role=AgentRole.PLANNER,
+        )
+    )
+
+    received = [event.event async for event in bus.subscribe("workflow-4")]
+
+    assert received == [
+        WorkflowEventType.WORKFLOW_STARTED,
+        WorkflowEventType.WORKFLOW_COMPLETED,
+    ]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("workflow_id", ["", "   ", ".workflow-1", "workflow/1", "x" * 65])
+async def test_workflow_event_bus_rejects_invalid_subscription_ids(workflow_id: str) -> None:
+    bus = WorkflowEventBus()
+
+    with pytest.raises(ValueError):
+        async for _event in bus.subscribe(workflow_id):
+            pass
+
+
 def test_workflow_event_bus_rejects_invalid_history_limit() -> None:
     with pytest.raises(ValueError, match="max_history_per_workflow must be at least 1"):
         WorkflowEventBus(max_history_per_workflow=0)

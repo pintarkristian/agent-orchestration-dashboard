@@ -49,6 +49,32 @@ def test_agent_definition_rejects_blank_text_fields(field_values: dict[str, str]
         AgentDefinition(**payload)
 
 
+@pytest.mark.parametrize(
+    ("model_class", "payload"),
+    [
+        (
+            AgentDefinition,
+            {
+                "role": AgentRole.PLANNER,
+                "name": "Planner Agent",
+                "description": "Breaks a task into execution steps.",
+                "system_prompt": "You are a planning agent.",
+            },
+        ),
+        (AgentExecutionInput, {"role": AgentRole.PLANNER, "input": "Create a plan"}),
+        (AgentExecutionResult, {"role": AgentRole.PLANNER}),
+    ],
+)
+@pytest.mark.parametrize("model_id", ["", ".agent-1", "agent/1", "x" * 65])
+def test_agent_models_reject_invalid_ids(
+    model_class: type[AgentDefinition | AgentExecutionInput | AgentExecutionResult],
+    payload: dict[str, object],
+    model_id: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        model_class(id=model_id, **payload)
+
+
 def test_agent_execution_input_creation() -> None:
     execution_input = AgentExecutionInput(
         role="researcher",
@@ -125,6 +151,24 @@ def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -
 
     with pytest.raises(ValidationError):
         WorkflowStep(**payload)
+
+
+@pytest.mark.parametrize(
+    ("model_class", "payload"),
+    [
+        (WorkflowStep, {"role": AgentRole.PLANNER, "name": "Planner Agent"}),
+        (WorkflowRun, {"input": "Create a plan"}),
+        (WorkflowResult, {"status": WorkflowStatus.COMPLETED}),
+    ],
+)
+@pytest.mark.parametrize("model_id", ["", ".workflow-1", "workflow/1", "x" * 65])
+def test_workflow_models_reject_invalid_ids(
+    model_class: type[WorkflowStep | WorkflowRun | WorkflowResult],
+    payload: dict[str, object],
+    model_id: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        model_class(id=model_id, **payload)
 
 
 def test_workflow_run_creation_defaults_to_pending() -> None:
@@ -214,3 +258,33 @@ def test_negative_duration_is_rejected() -> None:
 def test_workflow_event_rejects_invalid_workflow_ids(workflow_id: str) -> None:
     with pytest.raises(ValidationError):
         WorkflowEvent(workflow_id=workflow_id, event=WorkflowEventType.WORKFLOW_STARTED)
+
+
+@pytest.mark.parametrize("event_id", ["", ".event-1", "event/1", "x" * 65])
+def test_workflow_event_rejects_invalid_event_ids(event_id: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(
+            id=event_id,
+            workflow_id="workflow-1",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+        )
+
+
+def test_workflow_event_strips_message_text() -> None:
+    event = WorkflowEvent(
+        workflow_id="workflow-1",
+        event=WorkflowEventType.WORKFLOW_STARTED,
+        message="  Workflow started.  ",
+    )
+
+    assert event.message == "Workflow started."
+
+
+@pytest.mark.parametrize("message", ["", "   "])
+def test_workflow_event_rejects_blank_message_text(message: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(
+            workflow_id="workflow-1",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+            message=message,
+        )
