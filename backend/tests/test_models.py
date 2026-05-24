@@ -49,6 +49,32 @@ def test_agent_definition_rejects_blank_text_fields(field_values: dict[str, str]
         AgentDefinition(**payload)
 
 
+@pytest.mark.parametrize(
+    ("model_class", "payload"),
+    [
+        (
+            AgentDefinition,
+            {
+                "role": AgentRole.PLANNER,
+                "name": "Planner Agent",
+                "description": "Breaks a task into execution steps.",
+                "system_prompt": "You are a planning agent.",
+            },
+        ),
+        (AgentExecutionInput, {"role": AgentRole.PLANNER, "input": "Create a plan"}),
+        (AgentExecutionResult, {"role": AgentRole.PLANNER}),
+    ],
+)
+@pytest.mark.parametrize("model_id", ["", ".agent-1", "agent/1", "x" * 65])
+def test_agent_models_reject_invalid_ids(
+    model_class: type[AgentDefinition | AgentExecutionInput | AgentExecutionResult],
+    payload: dict[str, object],
+    model_id: str,
+) -> None:
+    with pytest.raises(ValidationError):
+        model_class(id=model_id, **payload)
+
+
 def test_agent_execution_input_creation() -> None:
     execution_input = AgentExecutionInput(
         role="researcher",
