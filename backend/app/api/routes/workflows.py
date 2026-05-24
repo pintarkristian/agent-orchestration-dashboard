@@ -3,7 +3,7 @@ from __future__ import annotations
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import APIRouter, Depends, HTTPException, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Path, Request, status
 from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
@@ -17,6 +17,16 @@ from app.services.orchestrator import SequentialOrchestrator
 from app.services.workflow_events import format_sse, workflow_event_bus
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
+WORKFLOW_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]*$"
+WorkflowIdPath = Annotated[
+    str,
+    Path(
+        min_length=1,
+        max_length=64,
+        pattern=WORKFLOW_ID_PATTERN,
+        description="Workflow id.",
+    ),
+]
 
 
 class WorkflowRunRequest(BaseModel):
@@ -33,7 +43,7 @@ class WorkflowRunRequest(BaseModel):
         default=None,
         min_length=1,
         max_length=64,
-        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$",
+        pattern=WORKFLOW_ID_PATTERN,
         description="Optional client-generated workflow id used for live event subscriptions.",
     )
 
@@ -85,7 +95,10 @@ async def run_workflow(
 
 
 @router.get("/{workflow_id}/events")
-async def stream_workflow_events(workflow_id: str, request: Request) -> StreamingResponse:
+async def stream_workflow_events(
+    workflow_id: WorkflowIdPath,
+    request: Request,
+) -> StreamingResponse:
     """Stream real-time workflow updates as Server-Sent Events."""
 
     async def event_stream() -> AsyncIterator[str]:
@@ -109,7 +122,7 @@ async def stream_workflow_events(workflow_id: str, request: Request) -> Streamin
 
 @router.get("/{workflow_id}", response_model=WorkflowResult)
 def get_workflow(
-    workflow_id: str,
+    workflow_id: WorkflowIdPath,
     workflow_repository: Annotated[WorkflowRepository, Depends(get_workflow_repository)],
 ) -> WorkflowResult:
     """Return a persisted workflow run by id."""

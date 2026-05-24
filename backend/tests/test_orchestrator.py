@@ -280,6 +280,21 @@ def test_run_workflow_endpoint_validates_workflow_id_format(workflow_id: str) ->
     assert mock_orchestrator.calls == []
 
 
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/workflows/.workflow-123",
+        "/api/workflows/.workflow-123/events",
+    ],
+)
+def test_workflow_path_endpoints_validate_workflow_id_format(path: str) -> None:
+    client = TestClient(app)
+
+    response = client.get(path)
+
+    assert response.status_code == 422
+
+
 def test_run_workflow_endpoint_rejects_duplicate_client_workflow_id() -> None:
     mock_orchestrator = MockOrchestrator()
     workflow_repository = ExistingWorkflowRepository()

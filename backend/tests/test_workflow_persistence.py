@@ -118,8 +118,7 @@ def test_workflow_repository_saves_and_reads_workflow(tmp_path) -> None:
 def test_workflow_repository_preserves_marker_like_strings(tmp_path) -> None:
     TestingSessionLocal = build_test_session(tmp_path)
     marker_like_text = (
-        '{"__ai_agent_orchestration_dashboard_value__": true, '
-        '"value": {"unexpected": "dict"}}'
+        '{"__ai_agent_orchestration_dashboard_value__": true, ' '"value": {"unexpected": "dict"}}'
     )
     result = sample_workflow_result()
     result.id = "workflow-marker-string"

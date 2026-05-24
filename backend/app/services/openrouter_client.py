@@ -45,13 +45,10 @@ class OpenRouterClient:
             model if model is not None else settings.openrouter_model,
             field_name="model",
         )
-        self.base_url = (
-            self._normalize_required_text(
-                base_url if base_url is not None else settings.openrouter_base_url,
-                field_name="base_url",
-            )
-            .rstrip("/")
-        )
+        self.base_url = self._normalize_required_text(
+            base_url if base_url is not None else settings.openrouter_base_url,
+            field_name="base_url",
+        ).rstrip("/")
         if not self.base_url:
             raise ValueError("base_url must not be blank.")
         self.timeout_seconds = (
