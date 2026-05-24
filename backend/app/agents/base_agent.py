@@ -26,6 +26,10 @@ class BaseAgent:
         system_prompt: str,
         openrouter_client: CompletionClient,
     ) -> None:
+        name = self._normalize_required_text(name, field_name="name")
+        description = self._normalize_required_text(description, field_name="description")
+        system_prompt = self._normalize_required_text(system_prompt, field_name="system_prompt")
+
         self.role = role
         self.name = name
         self.description = description
@@ -76,3 +80,11 @@ class BaseAgent:
     def _duration_ms(started_at: datetime, completed_at: datetime) -> int:
         """Return elapsed time in milliseconds."""
         return max(0, int((completed_at - started_at).total_seconds() * 1000))
+
+    @staticmethod
+    def _normalize_required_text(value: str, *, field_name: str) -> str:
+        """Strip required metadata text and fail when it is blank."""
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError(f"{field_name} must not be blank")
+        return normalized

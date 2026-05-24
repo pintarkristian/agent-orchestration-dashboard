@@ -32,11 +32,15 @@ async def test_base_agent_run_returns_completed_result() -> None:
     client = MockOpenRouterClient(response="Generated plan")
     agent = BaseAgent(
         role=AgentRole.PLANNER,
-        name="Test Planner",
-        description="Test planner agent.",
-        system_prompt="You are a planner.",
+        name="  Test Planner  ",
+        description="  Test planner agent.  ",
+        system_prompt="  You are a planner.  ",
         openrouter_client=client,
     )
+
+    assert agent.name == "Test Planner"
+    assert agent.description == "Test planner agent."
+    assert agent.system_prompt == "You are a planner."
 
     result = await agent.run("Create a project structure")
 
@@ -50,6 +54,29 @@ async def test_base_agent_run_returns_completed_result() -> None:
     assert result.duration_ms is not None
     assert result.duration_ms >= 0
     assert client.calls == [("You are a planner.", "Create a project structure")]
+
+
+@pytest.mark.parametrize(
+    ("field_name", "field_value"),
+    [
+        ("name", ""),
+        ("name", "   "),
+        ("description", ""),
+        ("system_prompt", ""),
+    ],
+)
+def test_base_agent_rejects_blank_metadata(field_name: str, field_value: str) -> None:
+    kwargs = {
+        "role": AgentRole.PLANNER,
+        "name": "Test Planner",
+        "description": "Test planner agent.",
+        "system_prompt": "You are a planner.",
+        "openrouter_client": MockOpenRouterClient(response="Generated plan"),
+        field_name: field_value,
+    }
+
+    with pytest.raises(ValueError, match=f"{field_name} must not be blank"):
+        BaseAgent(**kwargs)
 
 
 @pytest.mark.asyncio
