@@ -96,14 +96,35 @@ def test_agent_execution_result_creation_with_status_and_timing() -> None:
 def test_workflow_step_creation() -> None:
     step = WorkflowStep(
         role=AgentRole.TECHNICAL_ARCHITECT,
-        name="Design backend structure",
-        description="Create the folder and module layout.",
+        name="  Design backend structure  ",
+        description="  Create the folder and module layout.  ",
         status="running",
     )
 
     assert step.id
     assert step.role == AgentRole.TECHNICAL_ARCHITECT
+    assert step.name == "Design backend structure"
+    assert step.description == "Create the folder and module layout."
     assert step.status == WorkflowStatus.RUNNING
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"name": ""},
+        {"name": "   "},
+        {"description": ""},
+    ],
+)
+def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -> None:
+    payload = {
+        "role": AgentRole.TECHNICAL_ARCHITECT,
+        "name": "Design backend structure",
+        **field_values,
+    }
+
+    with pytest.raises(ValidationError):
+        WorkflowStep(**payload)
 
 
 def test_workflow_run_creation_defaults_to_pending() -> None:

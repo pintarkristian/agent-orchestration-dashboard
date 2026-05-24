@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import AgentRole, WorkflowStatus
 
@@ -12,10 +12,12 @@ from app.models.enums import AgentRole, WorkflowStatus
 class WorkflowStep(BaseModel):
     """One agent step inside an orchestration workflow."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     role: AgentRole
-    name: str
-    description: str | None = None
+    name: str = Field(min_length=1)
+    description: str | None = Field(default=None, min_length=1)
     input: str | dict[str, Any] | None = None
     output: str | dict[str, Any] | None = None
     status: WorkflowStatus = WorkflowStatus.PENDING
