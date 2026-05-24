@@ -124,9 +124,15 @@ class OpenRouterClient:
                 "OpenRouter returned an invalid chat completion response."
             ) from exc
 
-        if not isinstance(content, str) or not content.strip():
+        if not isinstance(content, str):
             raise OpenRouterInvalidResponseError(
                 "OpenRouter response did not include assistant text content."
             )
 
-        return content
+        normalized_content = content.strip()
+        if not normalized_content:
+            raise OpenRouterInvalidResponseError(
+                "OpenRouter response did not include assistant text content."
+            )
+
+        return normalized_content

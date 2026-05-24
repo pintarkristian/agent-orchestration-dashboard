@@ -96,6 +96,24 @@ async def test_generate_completion_strips_api_key_whitespace() -> None:
     assert captured_requests[0].headers["Authorization"] == "Bearer test-api-key"
 
 
+@pytest.mark.asyncio
+async def test_generate_completion_strips_response_content_whitespace() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=200,
+            json={"choices": [{"message": {"content": "\n  Generated plan.  \n"}}]},
+        )
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await client.generate_completion("system", "user")
+
+    assert result == "Generated plan."
+
+
 @pytest.mark.parametrize("timeout_seconds", [0, -1])
 def test_openrouter_client_rejects_non_positive_timeout(timeout_seconds: float) -> None:
     with pytest.raises(ValueError, match="timeout_seconds must be greater than 0"):
