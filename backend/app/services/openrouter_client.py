@@ -39,7 +39,8 @@ class OpenRouterClient:
         transport: httpx.AsyncBaseTransport | httpx.BaseTransport | None = None,
     ) -> None:
         settings = get_settings()
-        self.api_key = api_key if api_key is not None else settings.openrouter_api_key
+        configured_api_key = api_key if api_key is not None else settings.openrouter_api_key
+        self.api_key = configured_api_key.strip() if configured_api_key is not None else None
         self.model = model or settings.openrouter_model
         self.base_url = (base_url or settings.openrouter_base_url).rstrip("/")
         self.timeout_seconds = (

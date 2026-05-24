@@ -61,17 +61,39 @@ async def test_generate_completion_returns_assistant_content() -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_completion_requires_api_key() -> None:
+@pytest.mark.parametrize("api_key", ["", "   "])
+async def test_generate_completion_requires_api_key(api_key: str) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(status_code=200, json={})
 
     client = OpenRouterClient(
-        api_key="",
+        api_key=api_key,
         transport=httpx.MockTransport(handler),
     )
 
     with pytest.raises(MissingOpenRouterAPIKeyError):
         await client.generate_completion("system", "user")
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_strips_api_key_whitespace() -> None:
+    captured_requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        return httpx.Response(
+            status_code=200,
+            json={"choices": [{"message": {"content": "Generated plan"}}]},
+        )
+
+    client = OpenRouterClient(
+        api_key="  test-api-key  ",
+        transport=httpx.MockTransport(handler),
+    )
+
+    await client.generate_completion("system", "user")
+
+    assert captured_requests[0].headers["Authorization"] == "Bearer test-api-key"
 
 
 @pytest.mark.asyncio
