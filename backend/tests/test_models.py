@@ -15,15 +15,38 @@ from pydantic import ValidationError
 def test_agent_definition_creation() -> None:
     agent = AgentDefinition(
         role=AgentRole.PLANNER,
-        name="Planner Agent",
-        description="Breaks a task into execution steps.",
-        system_prompt="You are a planning agent.",
+        name="  Planner Agent  ",
+        description="  Breaks a task into execution steps.  ",
+        system_prompt="  You are a planning agent.  ",
     )
 
     assert agent.id
     assert agent.role == AgentRole.PLANNER
     assert agent.name == "Planner Agent"
+    assert agent.description == "Breaks a task into execution steps."
     assert agent.system_prompt == "You are a planning agent."
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"name": ""},
+        {"name": "   "},
+        {"description": ""},
+        {"system_prompt": ""},
+    ],
+)
+def test_agent_definition_rejects_blank_text_fields(field_values: dict[str, str]) -> None:
+    payload = {
+        "role": AgentRole.PLANNER,
+        "name": "Planner Agent",
+        "description": "Breaks a task into execution steps.",
+        "system_prompt": "You are a planning agent.",
+        **field_values,
+    }
+
+    with pytest.raises(ValidationError):
+        AgentDefinition(**payload)
 
 
 def test_agent_execution_input_creation() -> None:
