@@ -61,17 +61,95 @@ async def test_generate_completion_returns_assistant_content() -> None:
 
 
 @pytest.mark.asyncio
-async def test_generate_completion_requires_api_key() -> None:
+@pytest.mark.parametrize("api_key", ["", "   "])
+async def test_generate_completion_requires_api_key(api_key: str) -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         return httpx.Response(status_code=200, json={})
 
     client = OpenRouterClient(
-        api_key="",
+        api_key=api_key,
         transport=httpx.MockTransport(handler),
     )
 
     with pytest.raises(MissingOpenRouterAPIKeyError):
         await client.generate_completion("system", "user")
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_strips_api_key_whitespace() -> None:
+    captured_requests: list[httpx.Request] = []
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        captured_requests.append(request)
+        return httpx.Response(
+            status_code=200,
+            json={"choices": [{"message": {"content": "Generated plan"}}]},
+        )
+
+    client = OpenRouterClient(
+        api_key="  test-api-key  ",
+        transport=httpx.MockTransport(handler),
+    )
+
+    await client.generate_completion("system", "user")
+
+    assert captured_requests[0].headers["Authorization"] == "Bearer test-api-key"
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_strips_response_content_whitespace() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            status_code=200,
+            json={"choices": [{"message": {"content": "\n  Generated plan.  \n"}}]},
+        )
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    result = await client.generate_completion("system", "user")
+
+    assert result == "Generated plan."
+
+
+@pytest.mark.parametrize("timeout_seconds", [0, -1])
+def test_openrouter_client_rejects_non_positive_timeout(timeout_seconds: float) -> None:
+    with pytest.raises(ValueError, match="timeout_seconds must be greater than 0"):
+        OpenRouterClient(api_key="test-api-key", timeout_seconds=timeout_seconds)
+
+
+def test_openrouter_client_normalizes_model_and_base_url() -> None:
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        model="  test/model  ",
+        base_url="  https://openrouter.ai/api/v1/  ",
+    )
+
+    assert client.model == "test/model"
+    assert client.base_url == "https://openrouter.ai/api/v1"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"model": ""}, "model must not be blank"),
+        ({"model": "   "}, "model must not be blank"),
+        ({"base_url": ""}, "base_url must not be blank"),
+        ({"base_url": "   "}, "base_url must not be blank"),
+        ({"base_url": "/"}, "base_url must not be blank"),
+        ({"base_url": "openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
+        ({"base_url": "/api/v1"}, "base_url must be an absolute HTTP"),
+        ({"base_url": "ftp://openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
+    ],
+)
+def test_openrouter_client_rejects_blank_text_configuration(
+    kwargs: dict[str, str],
+    match: str,
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        OpenRouterClient(api_key="test-api-key", **kwargs)
 
 
 @pytest.mark.asyncio
@@ -86,6 +164,27 @@ async def test_generate_completion_wraps_http_status_errors() -> None:
 
     with pytest.raises(OpenRouterHTTPError, match="HTTP 429"):
         await client.generate_completion("system", "user")
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_truncates_large_http_error_bodies() -> None:
+    error_body = "rate limited " * 100
+
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=429, text=error_body)
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(OpenRouterHTTPError) as exc_info:
+        await client.generate_completion("system", "user")
+
+    message = str(exc_info.value)
+    assert message.startswith("OpenRouter returned HTTP 429: rate limited")
+    assert message.endswith("... [truncated]")
+    assert len(message) < len(error_body)
 
 
 @pytest.mark.asyncio

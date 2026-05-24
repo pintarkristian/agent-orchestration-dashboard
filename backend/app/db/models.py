@@ -5,6 +5,8 @@ from datetime import UTC, datetime
 from sqlalchemy import DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
 
+from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH
+
 
 class Base(DeclarativeBase):
     """Base class for SQLAlchemy ORM models."""
@@ -15,7 +17,7 @@ class WorkflowRunRecord(Base):
 
     __tablename__ = "workflow_runs"
 
-    id: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
+    id: Mapped[str] = mapped_column(String(WORKFLOW_ID_MAX_LENGTH), primary_key=True, index=True)
     original_task: Mapped[str] = mapped_column(Text, nullable=False)
     status: Mapped[str] = mapped_column(String(32), nullable=False, index=True)
     final_answer: Mapped[str | None] = mapped_column(Text, nullable=True)
@@ -44,7 +46,7 @@ class AgentExecutionStepRecord(Base):
 
     id: Mapped[str] = mapped_column(String(64), primary_key=True, index=True)
     workflow_id: Mapped[str] = mapped_column(
-        String(64),
+        String(WORKFLOW_ID_MAX_LENGTH),
         ForeignKey("workflow_runs.id", ondelete="CASCADE"),
         nullable=False,
         index=True,
@@ -67,4 +69,4 @@ class AgentExecutionStepRecord(Base):
     )
 
 
-__all__ = ["Base", "WorkflowRunRecord", "AgentExecutionStepRecord"]
+__all__ = ["AgentExecutionStepRecord", "Base", "WorkflowRunRecord"]

@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import Any
 from uuid import uuid4
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from app.models.enums import AgentRole, WorkflowStatus
 
@@ -12,19 +12,23 @@ from app.models.enums import AgentRole, WorkflowStatus
 class AgentDefinition(BaseModel):
     """Static configuration for one orchestration agent."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     role: AgentRole
-    name: str
-    description: str
-    system_prompt: str
+    name: str = Field(min_length=1)
+    description: str = Field(min_length=1)
+    system_prompt: str = Field(min_length=1)
 
 
 class AgentExecutionInput(BaseModel):
     """Input payload passed to an agent during a workflow run."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     role: AgentRole
-    input: str | dict[str, Any]
+    input: str | dict[str, Any] = Field(min_length=1)
 
 
 class AgentExecutionResult(BaseModel):
@@ -42,8 +46,8 @@ class AgentExecutionResult(BaseModel):
 
 
 __all__ = [
-    "AgentRole",
     "AgentDefinition",
     "AgentExecutionInput",
     "AgentExecutionResult",
+    "AgentRole",
 ]

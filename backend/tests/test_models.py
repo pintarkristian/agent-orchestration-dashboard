@@ -8,31 +8,70 @@ from app.models.agent import (
     AgentRole,
 )
 from app.models.workflow import WorkflowResult, WorkflowRun, WorkflowStatus, WorkflowStep
+from app.models.workflow_event import WorkflowEvent, WorkflowEventType
 from pydantic import ValidationError
 
 
 def test_agent_definition_creation() -> None:
     agent = AgentDefinition(
         role=AgentRole.PLANNER,
-        name="Planner Agent",
-        description="Breaks a task into execution steps.",
-        system_prompt="You are a planning agent.",
+        name="  Planner Agent  ",
+        description="  Breaks a task into execution steps.  ",
+        system_prompt="  You are a planning agent.  ",
     )
 
     assert agent.id
     assert agent.role == AgentRole.PLANNER
     assert agent.name == "Planner Agent"
+    assert agent.description == "Breaks a task into execution steps."
     assert agent.system_prompt == "You are a planning agent."
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"name": ""},
+        {"name": "   "},
+        {"description": ""},
+        {"system_prompt": ""},
+    ],
+)
+def test_agent_definition_rejects_blank_text_fields(field_values: dict[str, str]) -> None:
+    payload = {
+        "role": AgentRole.PLANNER,
+        "name": "Planner Agent",
+        "description": "Breaks a task into execution steps.",
+        "system_prompt": "You are a planning agent.",
+        **field_values,
+    }
+
+    with pytest.raises(ValidationError):
+        AgentDefinition(**payload)
 
 
 def test_agent_execution_input_creation() -> None:
     execution_input = AgentExecutionInput(
         role="researcher",
-        input={"question": "What should the workflow research?"},
+        input="  What should the workflow research?  ",
     )
 
     assert execution_input.role == AgentRole.RESEARCHER
+    assert execution_input.input == "What should the workflow research?"
+
+
+def test_agent_execution_input_accepts_structured_input() -> None:
+    execution_input = AgentExecutionInput(
+        role="researcher",
+        input={"question": "What should the workflow research?"},
+    )
+
     assert execution_input.input == {"question": "What should the workflow research?"}
+
+
+@pytest.mark.parametrize("agent_input", ["", "   ", {}])
+def test_agent_execution_input_rejects_empty_input(agent_input: str | dict[str, str]) -> None:
+    with pytest.raises(ValidationError):
+        AgentExecutionInput(role="researcher", input=agent_input)
 
 
 def test_agent_execution_result_creation_with_status_and_timing() -> None:
@@ -57,22 +96,50 @@ def test_agent_execution_result_creation_with_status_and_timing() -> None:
 def test_workflow_step_creation() -> None:
     step = WorkflowStep(
         role=AgentRole.TECHNICAL_ARCHITECT,
-        name="Design backend structure",
-        description="Create the folder and module layout.",
+        name="  Design backend structure  ",
+        description="  Create the folder and module layout.  ",
         status="running",
     )
 
     assert step.id
     assert step.role == AgentRole.TECHNICAL_ARCHITECT
+    assert step.name == "Design backend structure"
+    assert step.description == "Create the folder and module layout."
     assert step.status == WorkflowStatus.RUNNING
 
 
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"name": ""},
+        {"name": "   "},
+        {"description": ""},
+    ],
+)
+def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -> None:
+    payload = {
+        "role": AgentRole.TECHNICAL_ARCHITECT,
+        "name": "Design backend structure",
+        **field_values,
+    }
+
+    with pytest.raises(ValidationError):
+        WorkflowStep(**payload)
+
+
 def test_workflow_run_creation_defaults_to_pending() -> None:
-    run = WorkflowRun(input="Build an orchestration dashboard")
+    run = WorkflowRun(input="  Build an orchestration dashboard  ")
 
     assert run.id
+    assert run.input == "Build an orchestration dashboard"
     assert run.status == WorkflowStatus.PENDING
     assert run.steps == []
+
+
+@pytest.mark.parametrize("workflow_input", ["", "   ", {}])
+def test_workflow_run_rejects_empty_input(workflow_input: str | dict[str, str]) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowRun(input=workflow_input)
 
 
 def test_workflow_result_creation() -> None:
@@ -84,16 +151,38 @@ def test_workflow_result_creation() -> None:
     )
 
     result = WorkflowResult(
-        input="Create project foundation",
-        output="Project foundation created.",
+        input="  Create project foundation  ",
+        output="  Project foundation created.  ",
+        final_answer="  Project foundation created.  ",
         status=WorkflowStatus.COMPLETED,
         steps=[step],
         duration_ms=500,
     )
 
     assert result.status == WorkflowStatus.COMPLETED
+    assert result.input == "Create project foundation"
+    assert result.output == "Project foundation created."
+    assert result.final_answer == "Project foundation created."
     assert result.steps[0].role == AgentRole.FINAL_ANSWER
     assert result.duration_ms == 500
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"input": ""},
+        {"input": {}},
+        {"output": ""},
+        {"output": {}},
+        {"final_answer": ""},
+        {"error": ""},
+    ],
+)
+def test_workflow_result_rejects_empty_provided_values(field_values: dict[str, object]) -> None:
+    payload = {"status": WorkflowStatus.COMPLETED, **field_values}
+
+    with pytest.raises(ValidationError):
+        WorkflowResult(**payload)
 
 
 def test_agent_role_values() -> None:
@@ -119,3 +208,9 @@ def test_workflow_status_values() -> None:
 def test_negative_duration_is_rejected() -> None:
     with pytest.raises(ValidationError):
         WorkflowRun(input="Invalid duration", duration_ms=-1)
+
+
+@pytest.mark.parametrize("workflow_id", ["", ".workflow-1", "workflow/1", "x" * 65])
+def test_workflow_event_rejects_invalid_workflow_ids(workflow_id: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(workflow_id=workflow_id, event=WorkflowEventType.WORKFLOW_STARTED)

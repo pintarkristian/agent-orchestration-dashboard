@@ -12,7 +12,12 @@ from fastapi.testclient import TestClient
 
 
 class MockAgent:
-    def __init__(self, role: AgentRole, output: str, should_fail: bool = False) -> None:
+    def __init__(
+        self,
+        role: AgentRole,
+        output: str | dict[str, str],
+        should_fail: bool = False,
+    ) -> None:
         self.role = role
         self.name = f"{role.value.title()} Agent"
         self.description = f"Mock {role.value} agent."
@@ -95,6 +100,31 @@ def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
     ]
 
 
+def test_sequential_orchestrator_rejects_empty_agent_list() -> None:
+    with pytest.raises(ValueError, match="agents must include at least one workflow agent"):
+        SequentialOrchestrator(agents=[])
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("task", ["", "   "])
+async def test_sequential_orchestrator_rejects_blank_task(task: str) -> None:
+    orchestrator = SequentialOrchestrator(agents=build_mock_agents())
+
+    with pytest.raises(ValueError, match="task must not be blank"):
+        await orchestrator.run(task)
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_strips_direct_task_input() -> None:
+    agents = build_mock_agents()
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    result = await orchestrator.run("  Create a product plan  ")
+
+    assert result.input == "Create a product plan"
+    assert "Create a product plan" in agents[0].inputs[0]
+
+
 @pytest.mark.asyncio
 async def test_sequential_orchestrator_runs_agents_in_order() -> None:
     agents = build_mock_agents()
@@ -134,6 +164,31 @@ async def test_sequential_orchestrator_passes_previous_outputs_to_next_agents() 
     assert "Architecture output" in agents[3].inputs[0]
     assert "Developer output" in agents[4].inputs[0]
     assert "Reviewer output" in agents[5].inputs[0]
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_formats_structured_outputs_as_json_context() -> None:
+    agents = [
+        MockAgent(AgentRole.PLANNER, {"tasks": ["Define API", "Build UI"]}),
+        MockAgent(AgentRole.FINAL_ANSWER, "Final answer output"),
+    ]
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    await orchestrator.run("Create a product plan")
+
+    assert '"tasks": [' in agents[1].inputs[0]
+    assert "['tasks':" not in agents[1].inputs[0]
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_formats_structured_final_answer_as_json() -> None:
+    agents = [MockAgent(AgentRole.FINAL_ANSWER, {"summary": "Ready", "score": "high"})]
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    result = await orchestrator.run("Create a product plan")
+
+    assert result.final_answer == '{\n  "summary": "Ready",\n  "score": "high"\n}'
+    assert result.output == result.final_answer
 
 
 @pytest.mark.asyncio
@@ -241,6 +296,39 @@ def test_run_workflow_endpoint_validates_workflow_id_length() -> None:
 
     assert response.status_code == 422
     assert mock_orchestrator.calls == []
+
+
+@pytest.mark.parametrize("workflow_id", ["workflow/123", "workflow?123", ".workflow-123"])
+def test_run_workflow_endpoint_validates_workflow_id_format(workflow_id: str) -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "Create a technical plan", "workflow_id": workflow_id},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert mock_orchestrator.calls == []
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/workflows/.workflow-123",
+        "/api/workflows/.workflow-123/events",
+    ],
+)
+def test_workflow_path_endpoints_validate_workflow_id_format(path: str) -> None:
+    client = TestClient(app)
+
+    response = client.get(path)
+
+    assert response.status_code == 422
 
 
 def test_run_workflow_endpoint_rejects_duplicate_client_workflow_id() -> None:

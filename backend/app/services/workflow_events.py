@@ -17,7 +17,11 @@ class WorkflowEventBus:
     events.
     """
 
-    def __init__(self) -> None:
+    def __init__(self, max_history_per_workflow: int = 200) -> None:
+        if max_history_per_workflow < 1:
+            raise ValueError("max_history_per_workflow must be at least 1.")
+
+        self.max_history_per_workflow = max_history_per_workflow
         self._subscribers: dict[str, set[asyncio.Queue[WorkflowEvent]]] = defaultdict(set)
         self._history: dict[str, list[WorkflowEvent]] = defaultdict(list)
         self._lock = asyncio.Lock()
@@ -25,7 +29,10 @@ class WorkflowEventBus:
     async def publish(self, event: WorkflowEvent) -> None:
         """Publish one workflow event to active subscribers and history."""
         async with self._lock:
-            self._history[event.workflow_id].append(event)
+            history = self._history[event.workflow_id]
+            history.append(event)
+            if len(history) > self.max_history_per_workflow:
+                del history[: len(history) - self.max_history_per_workflow]
             subscribers = list(self._subscribers.get(event.workflow_id, set()))
 
         for queue in subscribers:

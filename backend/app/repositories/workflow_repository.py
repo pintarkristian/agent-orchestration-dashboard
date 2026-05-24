@@ -11,7 +11,10 @@ from app.db.models import AgentExecutionStepRecord, WorkflowRunRecord
 from app.models.enums import AgentRole, WorkflowStatus
 from app.models.workflow import WorkflowResult, WorkflowStep
 
-_STRUCTURED_VALUE_MARKER = "__ai_agent_orchestration_dashboard_value__"
+_SERIALIZED_VALUE_KIND = "kind"
+_SERIALIZED_VALUE_MARKER = "__ai_agent_orchestration_dashboard_value__"
+_SERIALIZED_VALUE_STRUCTURED = "structured"
+_SERIALIZED_VALUE_TEXT = "text"
 
 
 class WorkflowRepository:
@@ -131,12 +134,17 @@ class WorkflowRepository:
 
     @staticmethod
     def _serialize_value(value: str | dict[str, Any] | None) -> str | None:
-        """Store workflow values with a marker when they were structured."""
-        if value is None or isinstance(value, str):
-            return value
+        """Store workflow values with a marker that preserves their original type."""
+        if value is None:
+            return None
+
+        value_kind = (
+            _SERIALIZED_VALUE_TEXT if isinstance(value, str) else _SERIALIZED_VALUE_STRUCTURED
+        )
         return json.dumps(
             {
-                _STRUCTURED_VALUE_MARKER: True,
+                _SERIALIZED_VALUE_MARKER: True,
+                _SERIALIZED_VALUE_KIND: value_kind,
                 "value": value,
             },
             ensure_ascii=False,
@@ -153,12 +161,24 @@ class WorkflowRepository:
         except json.JSONDecodeError:
             return value
 
-        if (
-            isinstance(decoded, dict)
-            and decoded.get(_STRUCTURED_VALUE_MARKER) is True
-            and isinstance(decoded.get("value"), dict)
+        if not isinstance(decoded, dict) or decoded.get(_SERIALIZED_VALUE_MARKER) is not True:
+            return value
+
+        decoded_value = decoded.get("value")
+        if decoded.get(_SERIALIZED_VALUE_KIND) == _SERIALIZED_VALUE_TEXT and isinstance(
+            decoded_value,
+            str,
         ):
-            return decoded["value"]
+            return decoded_value
+
+        if decoded.get(_SERIALIZED_VALUE_KIND) == _SERIALIZED_VALUE_STRUCTURED and isinstance(
+            decoded_value,
+            dict,
+        ):
+            return decoded_value
+
+        if _SERIALIZED_VALUE_KIND not in decoded and isinstance(decoded_value, dict):
+            return decoded_value
 
         return value
 

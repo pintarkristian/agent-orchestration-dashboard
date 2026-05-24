@@ -22,6 +22,11 @@ class FailingOpenRouterClient:
         raise RuntimeError("OpenRouter failed")
 
 
+class EmptyMessageFailingOpenRouterClient:
+    async def generate_completion(self, system_prompt: str, user_prompt: str) -> str:
+        raise RuntimeError
+
+
 @pytest.mark.asyncio
 async def test_base_agent_run_returns_completed_result() -> None:
     client = MockOpenRouterClient(response="Generated plan")
@@ -68,6 +73,22 @@ async def test_base_agent_run_returns_failed_result_on_client_error() -> None:
     assert result.completed_at is not None
     assert result.duration_ms is not None
     assert result.duration_ms >= 0
+
+
+@pytest.mark.asyncio
+async def test_base_agent_run_uses_exception_class_when_error_message_is_empty() -> None:
+    agent = BaseAgent(
+        role=AgentRole.PLANNER,
+        name="Test Planner",
+        description="Test planner agent.",
+        system_prompt="You are a planner.",
+        openrouter_client=EmptyMessageFailingOpenRouterClient(),
+    )
+
+    result = await agent.run("Create a project structure")
+
+    assert result.status == WorkflowStatus.FAILED
+    assert result.error == "RuntimeError"
 
 
 @pytest.mark.asyncio

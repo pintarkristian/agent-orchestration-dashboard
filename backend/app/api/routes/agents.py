@@ -1,3 +1,5 @@
+from typing import Annotated
+
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -26,7 +28,7 @@ def get_openrouter_client() -> OpenRouterClient:
 
 
 def get_planner_agent(
-    openrouter_client: OpenRouterClient = Depends(get_openrouter_client),
+    openrouter_client: Annotated[OpenRouterClient, Depends(get_openrouter_client)],
 ) -> PlannerAgent:
     """Create the planner agent dependency."""
     return PlannerAgent(openrouter_client=openrouter_client)
@@ -35,7 +37,7 @@ def get_planner_agent(
 @router.post("/planner/run", response_model=AgentExecutionResult)
 async def run_planner_agent(
     request: PlannerRunRequest,
-    planner_agent: PlannerAgent = Depends(get_planner_agent),
+    planner_agent: Annotated[PlannerAgent, Depends(get_planner_agent)],
 ) -> AgentExecutionResult:
     """Run the planner agent for a user task."""
     return await planner_agent.run(request.task)

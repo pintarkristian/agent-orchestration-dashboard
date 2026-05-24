@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from app.agents import (
@@ -52,6 +53,8 @@ class SequentialOrchestrator:
         self.workflow_repository = workflow_repository
         self.event_publisher = event_publisher
         if agents is not None:
+            if not agents:
+                raise ValueError("agents must include at least one workflow agent")
             self.agents = agents
         else:
             if openrouter_client is None:
@@ -60,6 +63,10 @@ class SequentialOrchestrator:
 
     async def run(self, task: str, workflow_id: str | None = None) -> WorkflowResult:
         """Run the user task through all agents in sequence."""
+        task = task.strip()
+        if not task:
+            raise ValueError("task must not be blank")
+
         workflow_id = workflow_id or str(uuid4())
         workflow_started_at = datetime.now(UTC)
         steps: list[WorkflowStep] = []
@@ -179,7 +186,9 @@ class SequentialOrchestrator:
 
             previous_outputs.append(step)
             if agent.role == AgentRole.FINAL_ANSWER:
-                final_answer = str(result.output) if result.output is not None else None
+                final_answer = (
+                    self._format_step_output(result.output) if result.output is not None else None
+                )
 
         workflow_completed_at = datetime.now(UTC)
         total_duration_ms = self._duration_ms(workflow_started_at, workflow_completed_at)
@@ -245,7 +254,7 @@ class SequentialOrchestrator:
             return f"Original user task:\n{task}"
 
         previous_context = "\n\n".join(
-            f"{step.role.value} output:\n{step.output}"
+            f"{step.role.value} output:\n{SequentialOrchestrator._format_step_output(step.output)}"
             for step in previous_steps
             if step.output is not None
         )
@@ -255,6 +264,13 @@ class SequentialOrchestrator:
             f"Previous agent outputs:\n{previous_context}\n\n"
             f"Now perform the {current_role.value} agent responsibility."
         )
+
+    @staticmethod
+    def _format_step_output(output: str | dict[str, Any]) -> str:
+        """Format prior agent output for prompt context."""
+        if isinstance(output, str):
+            return output
+        return json.dumps(output, ensure_ascii=False, indent=2)
 
     @staticmethod
     def _pending_step(*, agent: WorkflowAgent) -> WorkflowStep:

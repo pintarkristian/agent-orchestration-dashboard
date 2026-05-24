@@ -7,6 +7,7 @@ from uuid import uuid4
 from pydantic import BaseModel, Field
 
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH, WORKFLOW_ID_PATTERN
 from app.models.workflow import WorkflowResult, WorkflowStep
 
 
@@ -26,7 +27,11 @@ class WorkflowEvent(BaseModel):
     """A typed event sent to frontend clients over Server-Sent Events."""
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    workflow_id: str
+    workflow_id: str = Field(
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     event: WorkflowEventType
     status: WorkflowStatus | None = None
     role: AgentRole | None = None
@@ -43,7 +48,7 @@ TERMINAL_WORKFLOW_EVENTS = {
 
 
 __all__ = [
+    "TERMINAL_WORKFLOW_EVENTS",
     "WorkflowEvent",
     "WorkflowEventType",
-    "TERMINAL_WORKFLOW_EVENTS",
 ]
