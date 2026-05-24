@@ -102,6 +102,35 @@ def test_openrouter_client_rejects_non_positive_timeout(timeout_seconds: float) 
         OpenRouterClient(api_key="test-api-key", timeout_seconds=timeout_seconds)
 
 
+def test_openrouter_client_normalizes_model_and_base_url() -> None:
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        model="  test/model  ",
+        base_url="  https://openrouter.ai/api/v1/  ",
+    )
+
+    assert client.model == "test/model"
+    assert client.base_url == "https://openrouter.ai/api/v1"
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "match"),
+    [
+        ({"model": ""}, "model must not be blank"),
+        ({"model": "   "}, "model must not be blank"),
+        ({"base_url": ""}, "base_url must not be blank"),
+        ({"base_url": "   "}, "base_url must not be blank"),
+        ({"base_url": "/"}, "base_url must not be blank"),
+    ],
+)
+def test_openrouter_client_rejects_blank_text_configuration(
+    kwargs: dict[str, str],
+    match: str,
+) -> None:
+    with pytest.raises(ValueError, match=match):
+        OpenRouterClient(api_key="test-api-key", **kwargs)
+
+
 @pytest.mark.asyncio
 async def test_generate_completion_wraps_http_status_errors() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:

@@ -41,8 +41,19 @@ class OpenRouterClient:
         settings = get_settings()
         configured_api_key = api_key if api_key is not None else settings.openrouter_api_key
         self.api_key = configured_api_key.strip() if configured_api_key is not None else None
-        self.model = model or settings.openrouter_model
-        self.base_url = (base_url or settings.openrouter_base_url).rstrip("/")
+        self.model = self._normalize_required_text(
+            model if model is not None else settings.openrouter_model,
+            field_name="model",
+        )
+        self.base_url = (
+            self._normalize_required_text(
+                base_url if base_url is not None else settings.openrouter_base_url,
+                field_name="base_url",
+            )
+            .rstrip("/")
+        )
+        if not self.base_url:
+            raise ValueError("base_url must not be blank.")
         self.timeout_seconds = (
             timeout_seconds if timeout_seconds is not None else settings.openrouter_timeout_seconds
         )
@@ -68,6 +79,14 @@ class OpenRouterClient:
             timeout=httpx.Timeout(self.timeout_seconds),
             transport=self._transport,
         )
+
+    @staticmethod
+    def _normalize_required_text(value: str, *, field_name: str) -> str:
+        """Normalize a required text setting and fail fast when it is blank."""
+        normalized = value.strip()
+        if not normalized:
+            raise ValueError(f"{field_name} must not be blank.")
+        return normalized
 
     async def generate_completion(self, system_prompt: str, user_prompt: str) -> str:
         """Generate a chat completion using OpenRouter.
