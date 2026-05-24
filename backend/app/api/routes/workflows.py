@@ -70,8 +70,15 @@ def list_workflows(
 async def run_workflow(
     request: WorkflowRunRequest,
     orchestrator: SequentialOrchestrator = Depends(get_orchestrator),
+    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
 ) -> WorkflowResult:
     """Run a task through the complete sequential agent workflow and persist it."""
+    if request.workflow_id and workflow_repository.get_workflow(request.workflow_id) is not None:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=f"Workflow '{request.workflow_id}' already exists.",
+        )
+
     return await orchestrator.run(request.task, workflow_id=request.workflow_id)
 
 

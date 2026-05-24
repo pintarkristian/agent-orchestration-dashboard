@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import UTC, datetime
 
 import pytest
-from app.api.routes.workflows import get_orchestrator
+from app.api.routes.workflows import get_orchestrator, get_workflow_repository
 from app.main import app
 from app.models.agent import AgentExecutionResult
 from app.models.enums import AgentRole, WorkflowStatus
@@ -65,6 +65,15 @@ class MockOrchestrator:
                 MockAgent(AgentRole.FINAL_ANSWER, "Final answer output"),
             ]
         ).run(task, workflow_id=workflow_id)
+
+
+class ExistingWorkflowRepository:
+    def __init__(self) -> None:
+        self.workflow_ids: list[str] = []
+
+    def get_workflow(self, workflow_id: str) -> object:
+        self.workflow_ids.append(workflow_id)
+        return object()
 
 
 def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
@@ -231,4 +240,25 @@ def test_run_workflow_endpoint_validates_workflow_id_length() -> None:
         app.dependency_overrides.clear()
 
     assert response.status_code == 422
+    assert mock_orchestrator.calls == []
+
+
+def test_run_workflow_endpoint_rejects_duplicate_client_workflow_id() -> None:
+    mock_orchestrator = MockOrchestrator()
+    workflow_repository = ExistingWorkflowRepository()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+    app.dependency_overrides[get_workflow_repository] = lambda: workflow_repository
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "Create a technical plan", "workflow_id": "workflow-123"},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 409
+    assert response.json()["detail"] == "Workflow 'workflow-123' already exists."
+    assert workflow_repository.workflow_ids == ["workflow-123"]
     assert mock_orchestrator.calls == []
