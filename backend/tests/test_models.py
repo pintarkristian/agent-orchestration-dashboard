@@ -258,3 +258,13 @@ def test_negative_duration_is_rejected() -> None:
 def test_workflow_event_rejects_invalid_workflow_ids(workflow_id: str) -> None:
     with pytest.raises(ValidationError):
         WorkflowEvent(workflow_id=workflow_id, event=WorkflowEventType.WORKFLOW_STARTED)
+
+
+@pytest.mark.parametrize("event_id", ["", ".event-1", "event/1", "x" * 65])
+def test_workflow_event_rejects_invalid_event_ids(event_id: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(
+            id=event_id,
+            workflow_id="workflow-1",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+        )

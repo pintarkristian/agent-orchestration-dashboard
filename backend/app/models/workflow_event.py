@@ -26,7 +26,12 @@ class WorkflowEventType(str, Enum):
 class WorkflowEvent(BaseModel):
     """A typed event sent to frontend clients over Server-Sent Events."""
 
-    id: str = Field(default_factory=lambda: str(uuid4()))
+    id: str = Field(
+        default_factory=lambda: str(uuid4()),
+        min_length=1,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
+        pattern=WORKFLOW_ID_PATTERN,
+    )
     workflow_id: str = Field(
         min_length=1,
         max_length=WORKFLOW_ID_MAX_LENGTH,
