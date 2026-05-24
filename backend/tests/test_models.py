@@ -8,6 +8,7 @@ from app.models.agent import (
     AgentRole,
 )
 from app.models.workflow import WorkflowResult, WorkflowRun, WorkflowStatus, WorkflowStep
+from app.models.workflow_event import WorkflowEvent, WorkflowEventType
 from pydantic import ValidationError
 
 
@@ -119,3 +120,9 @@ def test_workflow_status_values() -> None:
 def test_negative_duration_is_rejected() -> None:
     with pytest.raises(ValidationError):
         WorkflowRun(input="Invalid duration", duration_ms=-1)
+
+
+@pytest.mark.parametrize("workflow_id", ["", ".workflow-1", "workflow/1", "x" * 65])
+def test_workflow_event_rejects_invalid_workflow_ids(workflow_id: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(workflow_id=workflow_id, event=WorkflowEventType.WORKFLOW_STARTED)

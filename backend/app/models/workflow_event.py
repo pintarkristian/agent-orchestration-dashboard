@@ -26,7 +26,11 @@ class WorkflowEvent(BaseModel):
     """A typed event sent to frontend clients over Server-Sent Events."""
 
     id: str = Field(default_factory=lambda: str(uuid4()))
-    workflow_id: str
+    workflow_id: str = Field(
+        min_length=1,
+        max_length=64,
+        pattern=r"^[A-Za-z0-9][A-Za-z0-9._-]*$",
+    )
     event: WorkflowEventType
     status: WorkflowStatus | None = None
     role: AgentRole | None = None
