@@ -186,7 +186,9 @@ class SequentialOrchestrator:
 
             previous_outputs.append(step)
             if agent.role == AgentRole.FINAL_ANSWER:
-                final_answer = str(result.output) if result.output is not None else None
+                final_answer = (
+                    self._format_step_output(result.output) if result.output is not None else None
+                )
 
         workflow_completed_at = datetime.now(UTC)
         total_duration_ms = self._duration_ms(workflow_started_at, workflow_completed_at)

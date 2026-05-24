@@ -181,6 +181,17 @@ async def test_sequential_orchestrator_formats_structured_outputs_as_json_contex
 
 
 @pytest.mark.asyncio
+async def test_sequential_orchestrator_formats_structured_final_answer_as_json() -> None:
+    agents = [MockAgent(AgentRole.FINAL_ANSWER, {"summary": "Ready", "score": "high"})]
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    result = await orchestrator.run("Create a product plan")
+
+    assert result.final_answer == '{\n  "summary": "Ready",\n  "score": "high"\n}'
+    assert result.output == result.final_answer
+
+
+@pytest.mark.asyncio
 async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
     agents = build_mock_agents(failing_role=AgentRole.DEVELOPER)
     orchestrator = SequentialOrchestrator(agents=agents)
