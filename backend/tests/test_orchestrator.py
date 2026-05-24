@@ -100,6 +100,11 @@ def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
     ]
 
 
+def test_sequential_orchestrator_rejects_empty_agent_list() -> None:
+    with pytest.raises(ValueError, match="agents must include at least one workflow agent"):
+        SequentialOrchestrator(agents=[])
+
+
 @pytest.mark.asyncio
 async def test_sequential_orchestrator_runs_agents_in_order() -> None:
     agents = build_mock_agents()

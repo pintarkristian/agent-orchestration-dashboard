@@ -53,6 +53,8 @@ class SequentialOrchestrator:
         self.workflow_repository = workflow_repository
         self.event_publisher = event_publisher
         if agents is not None:
+            if not agents:
+                raise ValueError("agents must include at least one workflow agent")
             self.agents = agents
         else:
             if openrouter_client is None:
