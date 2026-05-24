@@ -128,11 +128,18 @@ def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -
 
 
 def test_workflow_run_creation_defaults_to_pending() -> None:
-    run = WorkflowRun(input="Build an orchestration dashboard")
+    run = WorkflowRun(input="  Build an orchestration dashboard  ")
 
     assert run.id
+    assert run.input == "Build an orchestration dashboard"
     assert run.status == WorkflowStatus.PENDING
     assert run.steps == []
+
+
+@pytest.mark.parametrize("workflow_input", ["", "   ", {}])
+def test_workflow_run_rejects_empty_input(workflow_input: str | dict[str, str]) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowRun(input=workflow_input)
 
 
 def test_workflow_result_creation() -> None:

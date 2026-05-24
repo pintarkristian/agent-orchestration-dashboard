@@ -31,8 +31,10 @@ class WorkflowStep(BaseModel):
 class WorkflowRun(BaseModel):
     """Runtime representation of a full multi-agent workflow execution."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
-    input: str | dict[str, Any]
+    input: str | dict[str, Any] = Field(min_length=1)
     status: WorkflowStatus = WorkflowStatus.PENDING
     steps: list[WorkflowStep] = Field(default_factory=list)
     error: str | None = None
