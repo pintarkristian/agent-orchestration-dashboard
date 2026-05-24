@@ -116,6 +116,16 @@ def test_sequential_orchestrator_rejects_duplicate_agent_roles() -> None:
         )
 
 
+def test_sequential_orchestrator_requires_final_answer_agent() -> None:
+    with pytest.raises(ValueError, match="agents must include a final_answer agent"):
+        SequentialOrchestrator(
+            agents=[
+                MockAgent(AgentRole.PLANNER, "Planner output"),
+                MockAgent(AgentRole.RESEARCHER, "Research output"),
+            ]
+        )
+
+
 @pytest.mark.asyncio
 @pytest.mark.parametrize("task", ["", "   "])
 async def test_sequential_orchestrator_rejects_blank_task(task: str) -> None:

@@ -59,6 +59,8 @@ class SequentialOrchestrator:
             agent_roles = [agent.role for agent in agents]
             if len(set(agent_roles)) != len(agent_roles):
                 raise ValueError("agents must not include duplicate roles")
+            if AgentRole.FINAL_ANSWER not in agent_roles:
+                raise ValueError("agents must include a final_answer agent")
             self.agents = agents
         else:
             if openrouter_client is None:
