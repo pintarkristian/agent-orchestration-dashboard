@@ -12,9 +12,9 @@ class Settings(BaseSettings):
     environment: str = Field(default="development", min_length=1)
 
     openrouter_api_key: str | None = None
-    openrouter_model: str = "openai/gpt-4o-mini"
-    openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    openrouter_timeout_seconds: float = 60.0
+    openrouter_model: str = Field(default="openai/gpt-4o-mini", min_length=1)
+    openrouter_base_url: str = Field(default="https://openrouter.ai/api/v1", min_length=1)
+    openrouter_timeout_seconds: float = Field(default=60.0, gt=0)
 
     database_url: str = Field(default="sqlite:///./orchestration.db", min_length=1)
     cors_allowed_origins: list[str] = [
