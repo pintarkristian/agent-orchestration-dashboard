@@ -58,8 +58,8 @@ class WorkflowResult(BaseModel):
 
 
 __all__ = [
+    "WorkflowResult",
+    "WorkflowRun",
     "WorkflowStatus",
     "WorkflowStep",
-    "WorkflowRun",
-    "WorkflowResult",
 ]

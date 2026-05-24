@@ -43,7 +43,7 @@ TERMINAL_WORKFLOW_EVENTS = {
 
 
 __all__ = [
+    "TERMINAL_WORKFLOW_EVENTS",
     "WorkflowEvent",
     "WorkflowEventType",
-    "TERMINAL_WORKFLOW_EVENTS",
 ]

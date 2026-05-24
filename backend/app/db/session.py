@@ -45,4 +45,4 @@ def get_db() -> Generator[Session, None, None]:
         db.close()
 
 
-__all__ = ["engine", "SessionLocal", "get_db", "init_db"]
+__all__ = ["SessionLocal", "engine", "get_db", "init_db"]

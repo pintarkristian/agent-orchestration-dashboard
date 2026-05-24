@@ -18,8 +18,8 @@ __all__ = [
     "OpenRouterTimeoutError",
     "SequentialOrchestrator",
     "WorkflowAgent",
-    "WorkflowEventPublisher",
     "WorkflowEventBus",
+    "WorkflowEventPublisher",
     "format_sse",
     "workflow_event_bus",
 ]

@@ -53,7 +53,7 @@ class BaseAgent:
                 completed_at=completed_at,
                 duration_ms=self._duration_ms(started_at, completed_at),
             )
-        except Exception as exc:  # noqa: BLE001 - converted into agent execution result
+        except Exception as exc:
             completed_at = datetime.now(UTC)
 
             return AgentExecutionResult(
