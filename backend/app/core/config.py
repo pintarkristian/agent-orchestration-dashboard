@@ -1,6 +1,6 @@
 from functools import lru_cache
 
-from pydantic import Field
+from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -17,10 +17,13 @@ class Settings(BaseSettings):
     openrouter_timeout_seconds: float = Field(default=60.0, gt=0)
 
     database_url: str = Field(default="sqlite:///./orchestration.db", min_length=1)
-    cors_allowed_origins: list[str] = [
-        "http://localhost:5173",
-        "http://127.0.0.1:5173",
-    ]
+    cors_allowed_origins: list[str] = Field(
+        default=[
+            "http://localhost:5173",
+            "http://127.0.0.1:5173",
+        ],
+        min_length=1,
+    )
 
     model_config = SettingsConfigDict(
         env_file=".env",
@@ -28,6 +31,14 @@ class Settings(BaseSettings):
         extra="ignore",
         str_strip_whitespace=True,
     )
+
+    @field_validator("cors_allowed_origins")
+    @classmethod
+    def validate_cors_allowed_origins(cls, origins: list[str]) -> list[str]:
+        """Reject blank CORS origins."""
+        if any(not origin.strip() for origin in origins):
+            raise ValueError("cors_allowed_origins must not include blank origins")
+        return [origin.strip() for origin in origins]
 
 
 @lru_cache

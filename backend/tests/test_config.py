@@ -11,6 +11,7 @@ def test_settings_strip_application_text_fields() -> None:
         database_url="  sqlite:///./test.db  ",
         openrouter_model="  test/model  ",
         openrouter_base_url="  https://openrouter.ai/api/v1  ",
+        cors_allowed_origins=["  http://localhost:5173  "],
     )
 
     assert settings.app_name == "Dashboard API"
@@ -19,6 +20,7 @@ def test_settings_strip_application_text_fields() -> None:
     assert settings.database_url == "sqlite:///./test.db"
     assert settings.openrouter_model == "test/model"
     assert settings.openrouter_base_url == "https://openrouter.ai/api/v1"
+    assert settings.cors_allowed_origins == ["http://localhost:5173"]
 
 
 @pytest.mark.parametrize(
@@ -43,3 +45,9 @@ def test_settings_reject_blank_openrouter_text_fields(field_name: str) -> None:
 def test_settings_reject_non_positive_openrouter_timeout(timeout_seconds: float) -> None:
     with pytest.raises(ValidationError):
         Settings(openrouter_timeout_seconds=timeout_seconds)
+
+
+@pytest.mark.parametrize("origins", [[], [""], ["http://localhost:5173", "   "]])
+def test_settings_reject_invalid_cors_origin_lists(origins: list[str]) -> None:
+    with pytest.raises(ValidationError):
+        Settings(cors_allowed_origins=origins)
