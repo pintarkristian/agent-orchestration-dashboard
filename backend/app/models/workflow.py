@@ -47,13 +47,15 @@ class WorkflowRun(BaseModel):
 class WorkflowResult(BaseModel):
     """Final result returned after a workflow finishes."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
-    input: str | dict[str, Any] | None = None
-    output: str | dict[str, Any] | None = None
-    final_answer: str | None = None
+    input: str | dict[str, Any] | None = Field(default=None, min_length=1)
+    output: str | dict[str, Any] | None = Field(default=None, min_length=1)
+    final_answer: str | None = Field(default=None, min_length=1)
     status: WorkflowStatus
     steps: list[WorkflowStep] = Field(default_factory=list)
-    error: str | None = None
+    error: str | None = Field(default=None, min_length=1)
     created_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None

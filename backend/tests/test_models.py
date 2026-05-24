@@ -151,16 +151,38 @@ def test_workflow_result_creation() -> None:
     )
 
     result = WorkflowResult(
-        input="Create project foundation",
-        output="Project foundation created.",
+        input="  Create project foundation  ",
+        output="  Project foundation created.  ",
+        final_answer="  Project foundation created.  ",
         status=WorkflowStatus.COMPLETED,
         steps=[step],
         duration_ms=500,
     )
 
     assert result.status == WorkflowStatus.COMPLETED
+    assert result.input == "Create project foundation"
+    assert result.output == "Project foundation created."
+    assert result.final_answer == "Project foundation created."
     assert result.steps[0].role == AgentRole.FINAL_ANSWER
     assert result.duration_ms == 500
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"input": ""},
+        {"input": {}},
+        {"output": ""},
+        {"output": {}},
+        {"final_answer": ""},
+        {"error": ""},
+    ],
+)
+def test_workflow_result_rejects_empty_provided_values(field_values: dict[str, object]) -> None:
+    payload = {"status": WorkflowStatus.COMPLETED, **field_values}
+
+    with pytest.raises(ValidationError):
+        WorkflowResult(**payload)
 
 
 def test_agent_role_values() -> None:
