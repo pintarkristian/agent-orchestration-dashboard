@@ -199,6 +199,18 @@ def test_openrouter_client_normalizes_model_and_base_url() -> None:
         ({"base_url": "openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
         ({"base_url": "/api/v1"}, "base_url must be an absolute HTTP"),
         ({"base_url": "ftp://openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
+        (
+            {"base_url": "https://openrouter.ai/api/v1?debug=true"},
+            "base_url must not include a query string",
+        ),
+        (
+            {"base_url": "https://openrouter.ai/api/v1#chat"},
+            "base_url must not include a query string",
+        ),
+        (
+            {"base_url": "https://user:pass@openrouter.ai/api/v1"},
+            "base_url must not include credentials",
+        ),
     ],
 )
 def test_openrouter_client_rejects_blank_text_configuration(
@@ -242,6 +254,20 @@ async def test_generate_completion_truncates_large_http_error_bodies() -> None:
     assert message.startswith("OpenRouter returned HTTP 429: rate limited")
     assert message.endswith("... [truncated]")
     assert len(message) < len(error_body)
+
+
+@pytest.mark.asyncio
+async def test_generate_completion_labels_empty_http_error_body() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=500, text="   ")
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(OpenRouterHTTPError, match="<empty response body>"):
+        await client.generate_completion("system", "user")
 
 
 @pytest.mark.asyncio

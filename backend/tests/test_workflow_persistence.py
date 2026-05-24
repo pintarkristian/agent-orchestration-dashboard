@@ -3,6 +3,7 @@ from __future__ import annotations
 from collections.abc import Generator
 from datetime import UTC, datetime
 
+import pytest
 from app.api.routes.workflows import get_openrouter_client
 from app.db.models import Base
 from app.db.session import get_db
@@ -139,6 +140,16 @@ def test_workflow_repository_preserves_marker_like_strings(tmp_path) -> None:
         assert loaded.input == marker_like_text
         assert loaded.steps[0].input == marker_like_text
         assert loaded.steps[0].output == marker_like_text
+
+
+def test_workflow_repository_rejects_invalid_lookup_ids(tmp_path) -> None:
+    testing_session_local = build_test_session(tmp_path)
+
+    with testing_session_local() as db:
+        repository = WorkflowRepository(db)
+
+        with pytest.raises(ValueError):
+            repository.get_workflow("workflow/1")
 
 
 def test_workflow_routes_persist_runs_and_return_history(tmp_path) -> None:

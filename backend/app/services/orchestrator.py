@@ -56,6 +56,11 @@ class SequentialOrchestrator:
         if agents is not None:
             if not agents:
                 raise ValueError("agents must include at least one workflow agent")
+            agent_roles = [agent.role for agent in agents]
+            if len(set(agent_roles)) != len(agent_roles):
+                raise ValueError("agents must not include duplicate roles")
+            if AgentRole.FINAL_ANSWER not in agent_roles:
+                raise ValueError("agents must include a final_answer agent")
             self.agents = agents
         else:
             if openrouter_client is None:
@@ -169,6 +174,8 @@ class SequentialOrchestrator:
                         event=WorkflowEventType.WORKFLOW_FAILED,
                         status=WorkflowStatus.FAILED,
                         workflow=persisted_result,
+                        role=agent.role,
+                        step=step,
                         message=workflow_error,
                     )
                 )
@@ -209,12 +216,15 @@ class SequentialOrchestrator:
             total_duration_ms=total_duration_ms,
         )
         persisted_result = self._persist_result(completed_result)
+        final_step = steps[-1] if steps else None
         await self._publish(
             WorkflowEvent(
                 workflow_id=workflow_id,
                 event=WorkflowEventType.WORKFLOW_COMPLETED,
                 status=WorkflowStatus.COMPLETED,
                 workflow=persisted_result,
+                role=final_step.role if final_step is not None else None,
+                step=final_step,
                 message="Workflow completed.",
             )
         )

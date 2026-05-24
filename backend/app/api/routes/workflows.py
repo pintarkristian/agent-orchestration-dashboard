@@ -8,6 +8,7 @@ from fastapi.responses import StreamingResponse
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
+from app.api.dependencies import get_openrouter_client
 from app.db.session import get_db
 from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH, WORKFLOW_ID_PATTERN
 from app.models.workflow import WorkflowResult
@@ -46,11 +47,6 @@ class WorkflowRunRequest(BaseModel):
         pattern=WORKFLOW_ID_PATTERN,
         description="Optional client-generated workflow id used for live event subscriptions.",
     )
-
-
-def get_openrouter_client() -> OpenRouterClient:
-    """Create the OpenRouter client dependency."""
-    return OpenRouterClient()
 
 
 def get_workflow_repository(db: Annotated[Session, Depends(get_db)]) -> WorkflowRepository:

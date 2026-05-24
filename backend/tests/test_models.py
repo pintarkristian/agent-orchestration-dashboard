@@ -106,17 +106,38 @@ def test_agent_execution_result_creation_with_status_and_timing() -> None:
 
     result = AgentExecutionResult(
         role=AgentRole.DEVELOPER,
-        input="Create the API skeleton.",
-        output="API skeleton created.",
+        input="  Create the API skeleton.  ",
+        output="  API skeleton created.  ",
         status=WorkflowStatus.COMPLETED,
         started_at=started_at,
         completed_at=completed_at,
         duration_ms=125,
     )
 
+    assert result.input == "Create the API skeleton."
+    assert result.output == "API skeleton created."
     assert result.status == WorkflowStatus.COMPLETED
     assert result.error is None
     assert result.duration_ms == 125
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"input": ""},
+        {"input": {}},
+        {"output": ""},
+        {"output": {}},
+        {"error": ""},
+    ],
+)
+def test_agent_execution_result_rejects_empty_payload_fields(
+    field_values: dict[str, object],
+) -> None:
+    payload = {"role": AgentRole.DEVELOPER, **field_values}
+
+    with pytest.raises(ValidationError):
+        AgentExecutionResult(**payload)
 
 
 def test_workflow_step_creation() -> None:
@@ -124,6 +145,8 @@ def test_workflow_step_creation() -> None:
         role=AgentRole.TECHNICAL_ARCHITECT,
         name="  Design backend structure  ",
         description="  Create the folder and module layout.  ",
+        input="  Original task  ",
+        output="  Architecture plan  ",
         status="running",
     )
 
@@ -131,6 +154,8 @@ def test_workflow_step_creation() -> None:
     assert step.role == AgentRole.TECHNICAL_ARCHITECT
     assert step.name == "Design backend structure"
     assert step.description == "Create the folder and module layout."
+    assert step.input == "Original task"
+    assert step.output == "Architecture plan"
     assert step.status == WorkflowStatus.RUNNING
 
 
@@ -143,6 +168,27 @@ def test_workflow_step_creation() -> None:
     ],
 )
 def test_workflow_step_rejects_blank_text_fields(field_values: dict[str, str]) -> None:
+    payload = {
+        "role": AgentRole.TECHNICAL_ARCHITECT,
+        "name": "Design backend structure",
+        **field_values,
+    }
+
+    with pytest.raises(ValidationError):
+        WorkflowStep(**payload)
+
+
+@pytest.mark.parametrize(
+    "field_values",
+    [
+        {"input": ""},
+        {"input": {}},
+        {"output": ""},
+        {"output": {}},
+        {"error": ""},
+    ],
+)
+def test_workflow_step_rejects_empty_payload_fields(field_values: dict[str, object]) -> None:
     payload = {
         "role": AgentRole.TECHNICAL_ARCHITECT,
         "name": "Design backend structure",

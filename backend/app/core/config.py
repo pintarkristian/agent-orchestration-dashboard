@@ -41,12 +41,38 @@ class Settings(BaseSettings):
         if any(not origin for origin in normalized_origins):
             raise ValueError("cors_allowed_origins must not include blank origins")
 
+        deduplicated_origins: list[str] = []
         for origin in normalized_origins:
             parsed = urlparse(origin)
             if parsed.scheme not in {"http", "https"} or not parsed.netloc:
                 raise ValueError("cors_allowed_origins must be absolute HTTP(S) origins")
+            if parsed.path not in {"", "/"} or parsed.params or parsed.query or parsed.fragment:
+                raise ValueError("cors_allowed_origins must not include paths or query strings")
+            if parsed.username or parsed.password:
+                raise ValueError("cors_allowed_origins must not include credentials")
+            if origin not in deduplicated_origins:
+                deduplicated_origins.append(origin)
 
-        return normalized_origins
+        return deduplicated_origins
+
+    @field_validator("openrouter_api_key")
+    @classmethod
+    def normalize_openrouter_api_key(cls, api_key: str | None) -> str | None:
+        """Treat blank API key configuration as missing."""
+        if api_key is None:
+            return None
+
+        normalized_api_key = api_key.strip()
+        return normalized_api_key or None
+
+    @field_validator("database_url")
+    @classmethod
+    def validate_database_url(cls, database_url: str) -> str:
+        """Require a URL-like SQLAlchemy database URL."""
+        parsed = urlparse(database_url)
+        if not parsed.scheme:
+            raise ValueError("database_url must include a scheme")
+        return database_url
 
 
 @lru_cache

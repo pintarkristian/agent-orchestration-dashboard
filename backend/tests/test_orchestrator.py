@@ -7,6 +7,7 @@ from app.api.routes.workflows import get_orchestrator, get_workflow_repository
 from app.main import app
 from app.models.agent import AgentExecutionResult
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.workflow_event import WorkflowEvent, WorkflowEventType
 from app.services.orchestrator import SequentialOrchestrator
 from fastapi.testclient import TestClient
 
@@ -81,6 +82,14 @@ class ExistingWorkflowRepository:
         return object()
 
 
+class RecordingEventPublisher:
+    def __init__(self) -> None:
+        self.events: list[WorkflowEvent] = []
+
+    async def publish(self, event: WorkflowEvent) -> None:
+        self.events.append(event)
+
+
 def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
     return [
         MockAgent(AgentRole.PLANNER, "Planner output", failing_role == AgentRole.PLANNER),
@@ -103,6 +112,27 @@ def build_mock_agents(failing_role: AgentRole | None = None) -> list[MockAgent]:
 def test_sequential_orchestrator_rejects_empty_agent_list() -> None:
     with pytest.raises(ValueError, match="agents must include at least one workflow agent"):
         SequentialOrchestrator(agents=[])
+
+
+def test_sequential_orchestrator_rejects_duplicate_agent_roles() -> None:
+    with pytest.raises(ValueError, match="agents must not include duplicate roles"):
+        SequentialOrchestrator(
+            agents=[
+                MockAgent(AgentRole.PLANNER, "First planner output"),
+                MockAgent(AgentRole.PLANNER, "Second planner output"),
+                MockAgent(AgentRole.FINAL_ANSWER, "Final answer output"),
+            ]
+        )
+
+
+def test_sequential_orchestrator_requires_final_answer_agent() -> None:
+    with pytest.raises(ValueError, match="agents must include a final_answer agent"):
+        SequentialOrchestrator(
+            agents=[
+                MockAgent(AgentRole.PLANNER, "Planner output"),
+                MockAgent(AgentRole.RESEARCHER, "Research output"),
+            ]
+        )
 
 
 @pytest.mark.asyncio
@@ -212,6 +242,28 @@ async def test_sequential_orchestrator_formats_structured_final_answer_as_json()
 
 
 @pytest.mark.asyncio
+async def test_sequential_orchestrator_completed_event_includes_final_step_context() -> None:
+    event_publisher = RecordingEventPublisher()
+    orchestrator = SequentialOrchestrator(
+        agents=build_mock_agents(),
+        event_publisher=event_publisher,
+    )
+
+    await orchestrator.run("Create a product plan")
+
+    completed_event = next(
+        event
+        for event in event_publisher.events
+        if event.event == WorkflowEventType.WORKFLOW_COMPLETED
+    )
+    assert completed_event.workflow is not None
+    assert completed_event.role == AgentRole.FINAL_ANSWER
+    assert completed_event.step is not None
+    assert completed_event.step.role == AgentRole.FINAL_ANSWER
+    assert completed_event.step.status == WorkflowStatus.COMPLETED
+
+
+@pytest.mark.asyncio
 async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
     agents = build_mock_agents(failing_role=AgentRole.DEVELOPER)
     orchestrator = SequentialOrchestrator(agents=agents)
@@ -231,6 +283,29 @@ async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
     assert result.steps[-1].status == WorkflowStatus.FAILED
     assert agents[4].inputs == []
     assert agents[5].inputs == []
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_failed_event_includes_failed_step_context() -> None:
+    agents = build_mock_agents(failing_role=AgentRole.DEVELOPER)
+    event_publisher = RecordingEventPublisher()
+    orchestrator = SequentialOrchestrator(
+        agents=agents,
+        event_publisher=event_publisher,
+    )
+
+    await orchestrator.run("Create a technical plan")
+
+    failed_event = next(
+        event
+        for event in event_publisher.events
+        if event.event == WorkflowEventType.WORKFLOW_FAILED
+    )
+    assert failed_event.workflow is not None
+    assert failed_event.role == AgentRole.DEVELOPER
+    assert failed_event.step is not None
+    assert failed_event.step.role == AgentRole.DEVELOPER
+    assert failed_event.step.status == WorkflowStatus.FAILED
 
 
 def test_run_workflow_endpoint_returns_workflow_result() -> None:

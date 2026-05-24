@@ -11,6 +11,7 @@ def test_settings_strip_application_text_fields() -> None:
         database_url="  sqlite:///./test.db  ",
         openrouter_model="  test/model  ",
         openrouter_base_url="  https://openrouter.ai/api/v1  ",
+        openrouter_api_key="  sk-test-key  ",
         cors_allowed_origins=["  http://localhost:5173  "],
     )
 
@@ -20,7 +21,23 @@ def test_settings_strip_application_text_fields() -> None:
     assert settings.database_url == "sqlite:///./test.db"
     assert settings.openrouter_model == "test/model"
     assert settings.openrouter_base_url == "https://openrouter.ai/api/v1"
+    assert settings.openrouter_api_key == "sk-test-key"
     assert settings.cors_allowed_origins == ["http://localhost:5173"]
+
+
+def test_settings_deduplicate_cors_origins() -> None:
+    settings = Settings(
+        cors_allowed_origins=[
+            "http://localhost:5173",
+            "  http://localhost:5173  ",
+            "http://127.0.0.1:5173",
+        ],
+    )
+
+    assert settings.cors_allowed_origins == [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
 
 
 @pytest.mark.parametrize(
@@ -30,6 +47,12 @@ def test_settings_strip_application_text_fields() -> None:
 def test_settings_reject_blank_application_text_fields(field_name: str) -> None:
     with pytest.raises(ValidationError):
         Settings(**{field_name: "   "})
+
+
+@pytest.mark.parametrize("database_url", ["orchestration.db", "./orchestration.db"])
+def test_settings_reject_database_urls_without_scheme(database_url: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(database_url=database_url)
 
 
 @pytest.mark.parametrize(
@@ -55,8 +78,23 @@ def test_settings_reject_invalid_cors_origin_lists(origins: list[str]) -> None:
 
 @pytest.mark.parametrize(
     "origin",
-    ["localhost:5173", "/dashboard", "ftp://localhost:5173"],
+    [
+        "localhost:5173",
+        "/dashboard",
+        "ftp://localhost:5173",
+        "http://localhost:5173/dashboard",
+        "http://localhost:5173?debug=true",
+        "http://localhost:5173#app",
+        "http://user:pass@localhost:5173",
+    ],
 )
 def test_settings_reject_non_http_cors_origins(origin: str) -> None:
     with pytest.raises(ValidationError):
         Settings(cors_allowed_origins=[origin])
+
+
+@pytest.mark.parametrize("api_key", ["", "   "])
+def test_settings_normalize_blank_openrouter_api_key_to_none(api_key: str) -> None:
+    settings = Settings(openrouter_api_key=api_key)
+
+    assert settings.openrouter_api_key is None

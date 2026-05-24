@@ -4,6 +4,7 @@ from fastapi import APIRouter, Depends
 from pydantic import BaseModel, ConfigDict, Field
 
 from app.agents.planner_agent import PlannerAgent
+from app.api.dependencies import get_openrouter_client
 from app.models.agent import AgentExecutionResult
 from app.services.openrouter_client import OpenRouterClient
 
@@ -20,11 +21,6 @@ class PlannerRunRequest(BaseModel):
         min_length=1,
         description="User task to break into smaller steps.",
     )
-
-
-def get_openrouter_client() -> OpenRouterClient:
-    """Create the OpenRouter client dependency."""
-    return OpenRouterClient()
 
 
 def get_planner_agent(

@@ -97,12 +97,19 @@ class OpenRouterClient:
         parsed = httpx.URL(normalized)
         if parsed.scheme not in {"http", "https"} or not parsed.host:
             raise ValueError("base_url must be an absolute HTTP(S) URL.")
+        if parsed.query or parsed.fragment:
+            raise ValueError("base_url must not include a query string or fragment.")
+        if parsed.username or parsed.password:
+            raise ValueError("base_url must not include credentials.")
 
         return normalized
 
     @classmethod
     def _truncate_error_body(cls, response_text: str) -> str:
         """Keep provider error bodies readable without letting them dominate logs."""
+        response_text = response_text.strip()
+        if not response_text:
+            return "<empty response body>"
         if len(response_text) <= cls._MAX_ERROR_BODY_LENGTH:
             return response_text
         return f"{response_text[: cls._MAX_ERROR_BODY_LENGTH].rstrip()}... [truncated]"
