@@ -9,6 +9,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy.orm import Session
 
 from app.db.session import get_db
+from app.models.identifiers import WORKFLOW_ID_MAX_LENGTH, WORKFLOW_ID_PATTERN
 from app.models.workflow import WorkflowResult
 from app.models.workflow_event import TERMINAL_WORKFLOW_EVENTS
 from app.repositories.workflow_repository import WorkflowRepository
@@ -17,12 +18,11 @@ from app.services.orchestrator import SequentialOrchestrator
 from app.services.workflow_events import format_sse, workflow_event_bus
 
 router = APIRouter(prefix="/api/workflows", tags=["workflows"])
-WORKFLOW_ID_PATTERN = r"^[A-Za-z0-9][A-Za-z0-9._-]*$"
 WorkflowIdPath = Annotated[
     str,
     Path(
         min_length=1,
-        max_length=64,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
         pattern=WORKFLOW_ID_PATTERN,
         description="Workflow id.",
     ),
@@ -42,7 +42,7 @@ class WorkflowRunRequest(BaseModel):
     workflow_id: str | None = Field(
         default=None,
         min_length=1,
-        max_length=64,
+        max_length=WORKFLOW_ID_MAX_LENGTH,
         pattern=WORKFLOW_ID_PATTERN,
         description="Optional client-generated workflow id used for live event subscriptions.",
     )
