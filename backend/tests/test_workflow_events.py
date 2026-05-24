@@ -72,3 +72,47 @@ async def test_workflow_event_bus_replays_history_and_stops_after_terminal_event
         WorkflowEventType.WORKFLOW_STARTED,
         WorkflowEventType.WORKFLOW_COMPLETED,
     ]
+
+
+@pytest.mark.asyncio
+async def test_workflow_event_bus_limits_replay_history() -> None:
+    bus = WorkflowEventBus(max_history_per_workflow=2)
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-3",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+            status=WorkflowStatus.RUNNING,
+            message="Workflow started.",
+        )
+    )
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-3",
+            event=WorkflowEventType.AGENT_RUNNING,
+            status=WorkflowStatus.RUNNING,
+            role=AgentRole.PLANNER,
+            message="Planner running.",
+        )
+    )
+    await bus.publish(
+        WorkflowEvent(
+            workflow_id="workflow-3",
+            event=WorkflowEventType.WORKFLOW_COMPLETED,
+            status=WorkflowStatus.COMPLETED,
+            message="Workflow completed.",
+        )
+    )
+
+    received = []
+    async for event in bus.subscribe("workflow-3"):
+        received.append(event.event)
+
+    assert received == [
+        WorkflowEventType.AGENT_RUNNING,
+        WorkflowEventType.WORKFLOW_COMPLETED,
+    ]
+
+
+def test_workflow_event_bus_rejects_invalid_history_limit() -> None:
+    with pytest.raises(ValueError, match="max_history_per_workflow must be at least 1"):
+        WorkflowEventBus(max_history_per_workflow=0)
