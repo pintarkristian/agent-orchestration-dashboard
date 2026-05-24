@@ -24,10 +24,10 @@ class WorkflowStep(BaseModel):
     role: AgentRole
     name: str = Field(min_length=1)
     description: str | None = Field(default=None, min_length=1)
-    input: str | dict[str, Any] | None = None
-    output: str | dict[str, Any] | None = None
+    input: str | dict[str, Any] | None = Field(default=None, min_length=1)
+    output: str | dict[str, Any] | None = Field(default=None, min_length=1)
     status: WorkflowStatus = WorkflowStatus.PENDING
-    error: str | None = None
+    error: str | None = Field(default=None, min_length=1)
     created_at: datetime | None = None
     started_at: datetime | None = None
     completed_at: datetime | None = None
