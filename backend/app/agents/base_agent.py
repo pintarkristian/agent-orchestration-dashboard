@@ -34,6 +34,10 @@ class BaseAgent:
 
     async def run(self, input_text: str) -> AgentExecutionResult:
         """Run the agent and return a structured execution result."""
+        input_text = input_text.strip()
+        if not input_text:
+            raise ValueError("input_text must not be blank")
+
         started_at = datetime.now(UTC)
 
         try:

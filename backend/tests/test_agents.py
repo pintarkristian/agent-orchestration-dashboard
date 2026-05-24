@@ -53,6 +53,41 @@ async def test_base_agent_run_returns_completed_result() -> None:
 
 
 @pytest.mark.asyncio
+async def test_base_agent_run_strips_input_text() -> None:
+    client = MockOpenRouterClient(response="Generated plan")
+    agent = BaseAgent(
+        role=AgentRole.PLANNER,
+        name="Test Planner",
+        description="Test planner agent.",
+        system_prompt="You are a planner.",
+        openrouter_client=client,
+    )
+
+    result = await agent.run("  Create a project structure  ")
+
+    assert result.input == "Create a project structure"
+    assert client.calls == [("You are a planner.", "Create a project structure")]
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("input_text", ["", "   "])
+async def test_base_agent_run_rejects_blank_input_text(input_text: str) -> None:
+    client = MockOpenRouterClient(response="Generated plan")
+    agent = BaseAgent(
+        role=AgentRole.PLANNER,
+        name="Test Planner",
+        description="Test planner agent.",
+        system_prompt="You are a planner.",
+        openrouter_client=client,
+    )
+
+    with pytest.raises(ValueError, match="input_text must not be blank"):
+        await agent.run(input_text)
+
+    assert client.calls == []
+
+
+@pytest.mark.asyncio
 async def test_base_agent_run_returns_failed_result_on_client_error() -> None:
     agent = BaseAgent(
         role=AgentRole.PLANNER,
