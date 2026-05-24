@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from collections.abc import AsyncIterator
+from typing import Annotated
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from fastapi.responses import StreamingResponse
@@ -42,14 +43,14 @@ def get_openrouter_client() -> OpenRouterClient:
     return OpenRouterClient()
 
 
-def get_workflow_repository(db: Session = Depends(get_db)) -> WorkflowRepository:
+def get_workflow_repository(db: Annotated[Session, Depends(get_db)]) -> WorkflowRepository:
     """Create the workflow repository dependency."""
     return WorkflowRepository(db)
 
 
 def get_orchestrator(
-    openrouter_client: OpenRouterClient = Depends(get_openrouter_client),
-    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
+    openrouter_client: Annotated[OpenRouterClient, Depends(get_openrouter_client)],
+    workflow_repository: Annotated[WorkflowRepository, Depends(get_workflow_repository)],
 ) -> SequentialOrchestrator:
     """Create the sequential orchestrator dependency."""
     return SequentialOrchestrator(
@@ -61,7 +62,7 @@ def get_orchestrator(
 
 @router.get("", response_model=list[WorkflowResult])
 def list_workflows(
-    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
+    workflow_repository: Annotated[WorkflowRepository, Depends(get_workflow_repository)],
 ) -> list[WorkflowResult]:
     """Return persisted workflow runs."""
     return workflow_repository.list_workflows()
@@ -70,8 +71,8 @@ def list_workflows(
 @router.post("/run", response_model=WorkflowResult)
 async def run_workflow(
     request: WorkflowRunRequest,
-    orchestrator: SequentialOrchestrator = Depends(get_orchestrator),
-    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
+    orchestrator: Annotated[SequentialOrchestrator, Depends(get_orchestrator)],
+    workflow_repository: Annotated[WorkflowRepository, Depends(get_workflow_repository)],
 ) -> WorkflowResult:
     """Run a task through the complete sequential agent workflow and persist it."""
     if request.workflow_id and workflow_repository.get_workflow(request.workflow_id) is not None:
@@ -109,7 +110,7 @@ async def stream_workflow_events(workflow_id: str, request: Request) -> Streamin
 @router.get("/{workflow_id}", response_model=WorkflowResult)
 def get_workflow(
     workflow_id: str,
-    workflow_repository: WorkflowRepository = Depends(get_workflow_repository),
+    workflow_repository: Annotated[WorkflowRepository, Depends(get_workflow_repository)],
 ) -> WorkflowResult:
     """Return a persisted workflow run by id."""
     workflow = workflow_repository.get_workflow(workflow_id)
