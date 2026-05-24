@@ -103,6 +103,9 @@ class OpenRouterClient:
     @classmethod
     def _truncate_error_body(cls, response_text: str) -> str:
         """Keep provider error bodies readable without letting them dominate logs."""
+        response_text = response_text.strip()
+        if not response_text:
+            return "<empty response body>"
         if len(response_text) <= cls._MAX_ERROR_BODY_LENGTH:
             return response_text
         return f"{response_text[: cls._MAX_ERROR_BODY_LENGTH].rstrip()}... [truncated]"

@@ -245,6 +245,20 @@ async def test_generate_completion_truncates_large_http_error_bodies() -> None:
 
 
 @pytest.mark.asyncio
+async def test_generate_completion_labels_empty_http_error_body() -> None:
+    async def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(status_code=500, text="   ")
+
+    client = OpenRouterClient(
+        api_key="test-api-key",
+        transport=httpx.MockTransport(handler),
+    )
+
+    with pytest.raises(OpenRouterHTTPError, match="<empty response body>"):
+        await client.generate_completion("system", "user")
+
+
+@pytest.mark.asyncio
 async def test_generate_completion_wraps_timeout_errors() -> None:
     async def handler(request: httpx.Request) -> httpx.Response:
         raise httpx.TimeoutException("request timed out")
