@@ -16,6 +16,7 @@ from app.agents import (
 from app.agents.base_agent import CompletionClient
 from app.models.agent import AgentExecutionResult
 from app.models.enums import AgentRole, WorkflowStatus
+from app.models.identifiers import validate_workflow_id
 from app.models.workflow import WorkflowResult, WorkflowStep
 from app.models.workflow_event import WorkflowEvent, WorkflowEventType
 from app.repositories.workflow_repository import WorkflowRepository
@@ -67,7 +68,7 @@ class SequentialOrchestrator:
         if not task:
             raise ValueError("task must not be blank")
 
-        workflow_id = workflow_id or str(uuid4())
+        workflow_id = validate_workflow_id(workflow_id) if workflow_id is not None else str(uuid4())
         workflow_started_at = datetime.now(UTC)
         steps: list[WorkflowStep] = []
         previous_outputs: list[WorkflowStep] = []

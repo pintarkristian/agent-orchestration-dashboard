@@ -126,6 +126,26 @@ async def test_sequential_orchestrator_strips_direct_task_input() -> None:
 
 
 @pytest.mark.asyncio
+async def test_sequential_orchestrator_strips_direct_workflow_id() -> None:
+    orchestrator = SequentialOrchestrator(agents=build_mock_agents())
+
+    result = await orchestrator.run("Create a product plan", workflow_id="  workflow-123  ")
+
+    assert result.id == "workflow-123"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize("workflow_id", ["", "   ", ".workflow-1", "workflow/1", "x" * 65])
+async def test_sequential_orchestrator_rejects_invalid_direct_workflow_id(
+    workflow_id: str,
+) -> None:
+    orchestrator = SequentialOrchestrator(agents=build_mock_agents())
+
+    with pytest.raises(ValueError):
+        await orchestrator.run("Create a product plan", workflow_id=workflow_id)
+
+
+@pytest.mark.asyncio
 async def test_sequential_orchestrator_runs_agents_in_order() -> None:
     agents = build_mock_agents()
     orchestrator = SequentialOrchestrator(agents=agents)
