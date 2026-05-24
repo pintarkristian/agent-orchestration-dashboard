@@ -139,6 +139,9 @@ def test_openrouter_client_normalizes_model_and_base_url() -> None:
         ({"base_url": ""}, "base_url must not be blank"),
         ({"base_url": "   "}, "base_url must not be blank"),
         ({"base_url": "/"}, "base_url must not be blank"),
+        ({"base_url": "openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
+        ({"base_url": "/api/v1"}, "base_url must be an absolute HTTP"),
+        ({"base_url": "ftp://openrouter.ai/api/v1"}, "base_url must be an absolute HTTP"),
     ],
 )
 def test_openrouter_client_rejects_blank_text_configuration(

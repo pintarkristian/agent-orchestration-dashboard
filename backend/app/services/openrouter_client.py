@@ -45,12 +45,9 @@ class OpenRouterClient:
             model if model is not None else settings.openrouter_model,
             field_name="model",
         )
-        self.base_url = self._normalize_required_text(
+        self.base_url = self._normalize_base_url(
             base_url if base_url is not None else settings.openrouter_base_url,
-            field_name="base_url",
-        ).rstrip("/")
-        if not self.base_url:
-            raise ValueError("base_url must not be blank.")
+        )
         self.timeout_seconds = (
             timeout_seconds if timeout_seconds is not None else settings.openrouter_timeout_seconds
         )
@@ -83,6 +80,21 @@ class OpenRouterClient:
         normalized = value.strip()
         if not normalized:
             raise ValueError(f"{field_name} must not be blank.")
+        return normalized
+
+    @staticmethod
+    def _normalize_base_url(value: str) -> str:
+        """Normalize and validate the OpenRouter base URL."""
+        normalized = OpenRouterClient._normalize_required_text(value, field_name="base_url").rstrip(
+            "/"
+        )
+        if not normalized:
+            raise ValueError("base_url must not be blank.")
+
+        parsed = httpx.URL(normalized)
+        if parsed.scheme not in {"http", "https"} or not parsed.host:
+            raise ValueError("base_url must be an absolute HTTP(S) URL.")
+
         return normalized
 
     async def generate_completion(self, system_prompt: str, user_prompt: str) -> str:
