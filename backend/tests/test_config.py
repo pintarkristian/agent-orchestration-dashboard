@@ -51,3 +51,12 @@ def test_settings_reject_non_positive_openrouter_timeout(timeout_seconds: float)
 def test_settings_reject_invalid_cors_origin_lists(origins: list[str]) -> None:
     with pytest.raises(ValidationError):
         Settings(cors_allowed_origins=origins)
+
+
+@pytest.mark.parametrize(
+    "origin",
+    ["localhost:5173", "/dashboard", "ftp://localhost:5173"],
+)
+def test_settings_reject_non_http_cors_origins(origin: str) -> None:
+    with pytest.raises(ValidationError):
+        Settings(cors_allowed_origins=[origin])

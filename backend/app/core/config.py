@@ -1,4 +1,5 @@
 from functools import lru_cache
+from urllib.parse import urlparse
 
 from pydantic import Field, field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -36,9 +37,16 @@ class Settings(BaseSettings):
     @classmethod
     def validate_cors_allowed_origins(cls, origins: list[str]) -> list[str]:
         """Reject blank CORS origins."""
-        if any(not origin.strip() for origin in origins):
+        normalized_origins = [origin.strip() for origin in origins]
+        if any(not origin for origin in normalized_origins):
             raise ValueError("cors_allowed_origins must not include blank origins")
-        return [origin.strip() for origin in origins]
+
+        for origin in normalized_origins:
+            parsed = urlparse(origin)
+            if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+                raise ValueError("cors_allowed_origins must be absolute HTTP(S) origins")
+
+        return normalized_origins
 
 
 @lru_cache
