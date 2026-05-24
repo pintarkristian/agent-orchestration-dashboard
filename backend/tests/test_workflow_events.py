@@ -64,9 +64,7 @@ async def test_workflow_event_bus_replays_history_and_stops_after_terminal_event
         )
     )
 
-    received = []
-    async for event in bus.subscribe("workflow-2"):
-        received.append(event.event)
+    received = [event.event async for event in bus.subscribe("workflow-2")]
 
     assert received == [
         WorkflowEventType.WORKFLOW_STARTED,
@@ -103,9 +101,7 @@ async def test_workflow_event_bus_limits_replay_history() -> None:
         )
     )
 
-    received = []
-    async for event in bus.subscribe("workflow-3"):
-        received.append(event.event)
+    received = [event.event async for event in bus.subscribe("workflow-3")]
 
     assert received == [
         WorkflowEventType.AGENT_RUNNING,
