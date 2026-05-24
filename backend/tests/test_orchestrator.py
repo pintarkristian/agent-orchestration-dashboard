@@ -243,6 +243,24 @@ def test_run_workflow_endpoint_validates_workflow_id_length() -> None:
     assert mock_orchestrator.calls == []
 
 
+@pytest.mark.parametrize("workflow_id", ["workflow/123", "workflow?123", ".workflow-123"])
+def test_run_workflow_endpoint_validates_workflow_id_format(workflow_id: str) -> None:
+    mock_orchestrator = MockOrchestrator()
+    app.dependency_overrides[get_orchestrator] = lambda: mock_orchestrator
+
+    try:
+        client = TestClient(app)
+        response = client.post(
+            "/api/workflows/run",
+            json={"task": "Create a technical plan", "workflow_id": workflow_id},
+        )
+    finally:
+        app.dependency_overrides.clear()
+
+    assert response.status_code == 422
+    assert mock_orchestrator.calls == []
+
+
 def test_run_workflow_endpoint_rejects_duplicate_client_workflow_id() -> None:
     mock_orchestrator = MockOrchestrator()
     workflow_repository = ExistingWorkflowRepository()
