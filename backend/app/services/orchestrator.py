@@ -56,6 +56,9 @@ class SequentialOrchestrator:
         if agents is not None:
             if not agents:
                 raise ValueError("agents must include at least one workflow agent")
+            agent_roles = [agent.role for agent in agents]
+            if len(set(agent_roles)) != len(agent_roles):
+                raise ValueError("agents must not include duplicate roles")
             self.agents = agents
         else:
             if openrouter_client is None:
