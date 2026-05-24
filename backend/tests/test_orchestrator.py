@@ -242,6 +242,28 @@ async def test_sequential_orchestrator_formats_structured_final_answer_as_json()
 
 
 @pytest.mark.asyncio
+async def test_sequential_orchestrator_completed_event_includes_final_step_context() -> None:
+    event_publisher = RecordingEventPublisher()
+    orchestrator = SequentialOrchestrator(
+        agents=build_mock_agents(),
+        event_publisher=event_publisher,
+    )
+
+    await orchestrator.run("Create a product plan")
+
+    completed_event = next(
+        event
+        for event in event_publisher.events
+        if event.event == WorkflowEventType.WORKFLOW_COMPLETED
+    )
+    assert completed_event.workflow is not None
+    assert completed_event.role == AgentRole.FINAL_ANSWER
+    assert completed_event.step is not None
+    assert completed_event.step.role == AgentRole.FINAL_ANSWER
+    assert completed_event.step.status == WorkflowStatus.COMPLETED
+
+
+@pytest.mark.asyncio
 async def test_sequential_orchestrator_stops_when_agent_fails() -> None:
     agents = build_mock_agents(failing_role=AgentRole.DEVELOPER)
     orchestrator = SequentialOrchestrator(agents=agents)
