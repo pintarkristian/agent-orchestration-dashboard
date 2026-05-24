@@ -24,9 +24,11 @@ class AgentDefinition(BaseModel):
 class AgentExecutionInput(BaseModel):
     """Input payload passed to an agent during a workflow run."""
 
+    model_config = ConfigDict(str_strip_whitespace=True)
+
     id: str = Field(default_factory=lambda: str(uuid4()))
     role: AgentRole
-    input: str | dict[str, Any]
+    input: str | dict[str, Any] = Field(min_length=1)
 
 
 class AgentExecutionResult(BaseModel):

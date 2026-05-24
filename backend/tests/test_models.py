@@ -52,11 +52,26 @@ def test_agent_definition_rejects_blank_text_fields(field_values: dict[str, str]
 def test_agent_execution_input_creation() -> None:
     execution_input = AgentExecutionInput(
         role="researcher",
-        input={"question": "What should the workflow research?"},
+        input="  What should the workflow research?  ",
     )
 
     assert execution_input.role == AgentRole.RESEARCHER
+    assert execution_input.input == "What should the workflow research?"
+
+
+def test_agent_execution_input_accepts_structured_input() -> None:
+    execution_input = AgentExecutionInput(
+        role="researcher",
+        input={"question": "What should the workflow research?"},
+    )
+
     assert execution_input.input == {"question": "What should the workflow research?"}
+
+
+@pytest.mark.parametrize("agent_input", ["", "   ", {}])
+def test_agent_execution_input_rejects_empty_input(agent_input: str | dict[str, str]) -> None:
+    with pytest.raises(ValidationError):
+        AgentExecutionInput(role="researcher", input=agent_input)
 
 
 def test_agent_execution_result_creation_with_status_and_timing() -> None:
