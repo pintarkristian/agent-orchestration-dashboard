@@ -23,6 +23,21 @@ def test_settings_strip_application_text_fields() -> None:
     assert settings.cors_allowed_origins == ["http://localhost:5173"]
 
 
+def test_settings_deduplicate_cors_origins() -> None:
+    settings = Settings(
+        cors_allowed_origins=[
+            "http://localhost:5173",
+            "  http://localhost:5173  ",
+            "http://127.0.0.1:5173",
+        ],
+    )
+
+    assert settings.cors_allowed_origins == [
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+    ]
+
+
 @pytest.mark.parametrize(
     "field_name",
     ["app_name", "app_version", "environment", "database_url"],

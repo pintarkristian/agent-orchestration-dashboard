@@ -41,12 +41,15 @@ class Settings(BaseSettings):
         if any(not origin for origin in normalized_origins):
             raise ValueError("cors_allowed_origins must not include blank origins")
 
+        deduplicated_origins: list[str] = []
         for origin in normalized_origins:
             parsed = urlparse(origin)
             if parsed.scheme not in {"http", "https"} or not parsed.netloc:
                 raise ValueError("cors_allowed_origins must be absolute HTTP(S) origins")
+            if origin not in deduplicated_origins:
+                deduplicated_origins.append(origin)
 
-        return normalized_origins
+        return deduplicated_origins
 
 
 @lru_cache
