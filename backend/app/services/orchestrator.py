@@ -63,6 +63,10 @@ class SequentialOrchestrator:
 
     async def run(self, task: str, workflow_id: str | None = None) -> WorkflowResult:
         """Run the user task through all agents in sequence."""
+        task = task.strip()
+        if not task:
+            raise ValueError("task must not be blank")
+
         workflow_id = workflow_id or str(uuid4())
         workflow_started_at = datetime.now(UTC)
         steps: list[WorkflowStep] = []

@@ -106,6 +106,26 @@ def test_sequential_orchestrator_rejects_empty_agent_list() -> None:
 
 
 @pytest.mark.asyncio
+@pytest.mark.parametrize("task", ["", "   "])
+async def test_sequential_orchestrator_rejects_blank_task(task: str) -> None:
+    orchestrator = SequentialOrchestrator(agents=build_mock_agents())
+
+    with pytest.raises(ValueError, match="task must not be blank"):
+        await orchestrator.run(task)
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_strips_direct_task_input() -> None:
+    agents = build_mock_agents()
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    result = await orchestrator.run("  Create a product plan  ")
+
+    assert result.input == "Create a product plan"
+    assert "Create a product plan" in agents[0].inputs[0]
+
+
+@pytest.mark.asyncio
 async def test_sequential_orchestrator_runs_agents_in_order() -> None:
     agents = build_mock_agents()
     orchestrator = SequentialOrchestrator(agents=agents)
