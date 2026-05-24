@@ -12,7 +12,12 @@ from fastapi.testclient import TestClient
 
 
 class MockAgent:
-    def __init__(self, role: AgentRole, output: str, should_fail: bool = False) -> None:
+    def __init__(
+        self,
+        role: AgentRole,
+        output: str | dict[str, str],
+        should_fail: bool = False,
+    ) -> None:
         self.role = role
         self.name = f"{role.value.title()} Agent"
         self.description = f"Mock {role.value} agent."
@@ -134,6 +139,20 @@ async def test_sequential_orchestrator_passes_previous_outputs_to_next_agents() 
     assert "Architecture output" in agents[3].inputs[0]
     assert "Developer output" in agents[4].inputs[0]
     assert "Reviewer output" in agents[5].inputs[0]
+
+
+@pytest.mark.asyncio
+async def test_sequential_orchestrator_formats_structured_outputs_as_json_context() -> None:
+    agents = [
+        MockAgent(AgentRole.PLANNER, {"tasks": ["Define API", "Build UI"]}),
+        MockAgent(AgentRole.FINAL_ANSWER, "Final answer output"),
+    ]
+    orchestrator = SequentialOrchestrator(agents=agents)
+
+    await orchestrator.run("Create a product plan")
+
+    assert '"tasks": [' in agents[1].inputs[0]
+    assert "['tasks':" not in agents[1].inputs[0]
 
 
 @pytest.mark.asyncio

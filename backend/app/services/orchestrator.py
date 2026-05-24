@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+import json
 from datetime import UTC, datetime
-from typing import Protocol
+from typing import Any, Protocol
 from uuid import uuid4
 
 from app.agents import (
@@ -245,7 +246,7 @@ class SequentialOrchestrator:
             return f"Original user task:\n{task}"
 
         previous_context = "\n\n".join(
-            f"{step.role.value} output:\n{step.output}"
+            f"{step.role.value} output:\n{SequentialOrchestrator._format_step_output(step.output)}"
             for step in previous_steps
             if step.output is not None
         )
@@ -255,6 +256,13 @@ class SequentialOrchestrator:
             f"Previous agent outputs:\n{previous_context}\n\n"
             f"Now perform the {current_role.value} agent responsibility."
         )
+
+    @staticmethod
+    def _format_step_output(output: str | dict[str, Any]) -> str:
+        """Format prior agent output for prompt context."""
+        if isinstance(output, str):
+            return output
+        return json.dumps(output, ensure_ascii=False, indent=2)
 
     @staticmethod
     def _pending_step(*, agent: WorkflowAgent) -> WorkflowStep:
