@@ -55,13 +55,14 @@ class BaseAgent:
             )
         except Exception as exc:
             completed_at = datetime.now(UTC)
+            error_message = str(exc) or exc.__class__.__name__
 
             return AgentExecutionResult(
                 role=self.role,
                 input=input_text,
                 output=None,
                 status=WorkflowStatus.FAILED,
-                error=str(exc),
+                error=error_message,
                 started_at=started_at,
                 completed_at=completed_at,
                 duration_ms=self._duration_ms(started_at, completed_at),
