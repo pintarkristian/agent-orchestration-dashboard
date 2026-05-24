@@ -268,3 +268,23 @@ def test_workflow_event_rejects_invalid_event_ids(event_id: str) -> None:
             workflow_id="workflow-1",
             event=WorkflowEventType.WORKFLOW_STARTED,
         )
+
+
+def test_workflow_event_strips_message_text() -> None:
+    event = WorkflowEvent(
+        workflow_id="workflow-1",
+        event=WorkflowEventType.WORKFLOW_STARTED,
+        message="  Workflow started.  ",
+    )
+
+    assert event.message == "Workflow started."
+
+
+@pytest.mark.parametrize("message", ["", "   "])
+def test_workflow_event_rejects_blank_message_text(message: str) -> None:
+    with pytest.raises(ValidationError):
+        WorkflowEvent(
+            workflow_id="workflow-1",
+            event=WorkflowEventType.WORKFLOW_STARTED,
+            message=message,
+        )
