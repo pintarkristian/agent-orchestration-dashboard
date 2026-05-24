@@ -63,6 +63,7 @@ class OpenRouterClient:
             raise MissingOpenRouterAPIKeyError("OPENROUTER_API_KEY is required to call OpenRouter.")
 
         return {
+            "Accept": "application/json",
             "Authorization": f"Bearer {self.api_key}",
             "Content-Type": "application/json",
         }

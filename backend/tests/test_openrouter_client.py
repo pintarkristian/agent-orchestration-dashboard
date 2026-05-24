@@ -50,7 +50,9 @@ async def test_generate_completion_returns_assistant_content() -> None:
     request = captured_requests[0]
     assert request.method == "POST"
     assert request.url.path == "/api/v1/chat/completions"
+    assert request.headers["Accept"] == "application/json"
     assert request.headers["Authorization"] == "Bearer test-api-key"
+    assert request.headers["Content-Type"] == "application/json"
 
     payload = json.loads(request.content.decode("utf-8"))
     assert payload["model"] == "test/model"
