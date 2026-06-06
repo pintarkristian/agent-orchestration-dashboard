@@ -13,8 +13,7 @@ def validate_workflow_id(value: str) -> str:
     if not workflow_id:
         raise ValueError("workflow_id must not be blank")
     invalid_length = len(workflow_id) > WORKFLOW_ID_MAX_LENGTH
-    invalid_pattern = _WORKFLOW_ID_REGEX.fullmatch(workflow_id) is None
-    if invalid_length or invalid_pattern:
+    if invalid_length or _WORKFLOW_ID_REGEX.fullmatch(workflow_id) is None:
         raise ValueError("workflow_id has an invalid format")
     return workflow_id
 
