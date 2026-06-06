@@ -149,8 +149,7 @@ async def test_workflow_event_bus_rejects_invalid_subscription_ids(workflow_id: 
     bus = WorkflowEventBus()
 
     with pytest.raises(ValueError):
-        async for _event in bus.subscribe(workflow_id):
-            pass
+        await bus.subscribe(workflow_id).__anext__()
 
 
 def test_workflow_event_bus_rejects_invalid_history_limit() -> None:
