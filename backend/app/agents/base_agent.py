@@ -51,30 +51,48 @@ class BaseAgent:
             )
             completed_at = datetime.now(UTC)
 
-            return AgentExecutionResult(
-                role=self.role,
-                input=input_text,
+            return self._build_execution_result(
+                input_text=input_text,
                 output=output,
                 status=WorkflowStatus.COMPLETED,
                 error=None,
                 started_at=started_at,
                 completed_at=completed_at,
-                duration_ms=self._duration_ms(started_at, completed_at),
             )
         except Exception as exc:
             completed_at = datetime.now(UTC)
             error_message = str(exc) or exc.__class__.__name__
 
-            return AgentExecutionResult(
-                role=self.role,
-                input=input_text,
+            return self._build_execution_result(
+                input_text=input_text,
                 output=None,
                 status=WorkflowStatus.FAILED,
                 error=error_message,
                 started_at=started_at,
                 completed_at=completed_at,
-                duration_ms=self._duration_ms(started_at, completed_at),
             )
+
+    def _build_execution_result(
+        self,
+        *,
+        input_text: str,
+        output: str | None,
+        status: WorkflowStatus,
+        error: str | None,
+        started_at: datetime,
+        completed_at: datetime,
+    ) -> AgentExecutionResult:
+        """Build a normalized agent execution result."""
+        return AgentExecutionResult(
+            role=self.role,
+            input=input_text,
+            output=output,
+            status=status,
+            error=error,
+            started_at=started_at,
+            completed_at=completed_at,
+            duration_ms=self._duration_ms(started_at, completed_at),
+        )
 
     @staticmethod
     def _duration_ms(started_at: datetime, completed_at: datetime) -> int:
