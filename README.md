@@ -1,4 +1,4 @@
-# AI Agent Orchestration Dashboard
+# Agent Orchestration Dashboard
 
 A full-stack dashboard that runs a task through a sequence of specialized AI agents, persists the workflow, and streams live progress to a React interface.
 
