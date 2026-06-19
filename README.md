@@ -1,4 +1,4 @@
-# AI Agent Orchestration Dashboard
+# Agent Orchestration Dashboard
 
 A full-stack dashboard that runs a task through a sequence of specialized AI agents, persists the workflow, and streams live progress to a React interface.
 
@@ -203,7 +203,7 @@ make format
 ### Backend `backend/.env`
 
 ```env
-APP_NAME="AI Agent Orchestration Dashboard API"
+APP_NAME="Agent Orchestration Dashboard API"
 APP_VERSION="0.1.0"
 ENVIRONMENT="development"
 OPENROUTER_API_KEY=
