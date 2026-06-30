@@ -323,16 +323,6 @@ ai-agent-orchestration-dashboard/
   README.md
 ```
 
-## Portfolio Focus
-
-This project is intended to show:
-
-- Clean separation between API routes, services, repositories, and domain models.
-- Practical orchestration of multiple model-backed agents.
-- Real-time frontend updates without introducing a message broker.
-- Testable backend logic with mocked external API calls.
-- A development environment that can run locally or in Docker.
-
 ## Future Improvements
 
 1. Add parallel and conditional orchestration workflows.
